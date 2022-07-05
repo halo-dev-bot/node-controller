@@ -45,10 +45,10 @@ public class ProducerService {
         }
     }
 
-    public void send(String message, Map<String, Object> producerProps) {
+    public void send(String key, String message, Map<String, Object> producerProps) {
         KafkaTemplate kafkaTemplate = this.init(producerProps);
         if (kafkaTemplate != null) {
-            kafkaTemplate.send(KafkaConfig.TOPICS, message);
+            kafkaTemplate.send(KafkaConfig.TOPICS, key, message);
         }
     }
 
@@ -57,7 +57,7 @@ public class ProducerService {
         try {
             if (producerServer != null) {
                 LoggerUtil.info("执行完成开始同步发送KAFKA【" + dto.getReportId() + "】");
-                producerServer.send(JSON.toJSONString(dto), kafkaConfig);
+                producerServer.send(dto.getReportId(), JSON.toJSONString(dto), kafkaConfig);
                 LoggerUtil.info("同步发送报告信息到KAFKA完成【" + dto.getReportId() + "】");
             }
         } catch (Exception ex) {
@@ -77,7 +77,7 @@ public class ProducerService {
                         resultDTO.setRequestResults(new LinkedList<RequestResult>() {{
                             this.add(item);
                         }});
-                        producerServer.send(JSON.toJSONString(resultDTO), kafkaConfig);
+                        producerServer.send(dto.getReportId(), JSON.toJSONString(resultDTO), kafkaConfig);
                     }
                 });
             }
