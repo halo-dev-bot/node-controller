@@ -36,7 +36,7 @@ public class PoolExecBlockingQueueUtil {
                 return blockingQueue.poll(30, TimeUnit.MINUTES);
             }
         } catch (Exception e) {
-            LoggerUtil.error("初始化队列失败：" + e.getMessage());
+            LoggerUtil.error("初始化队列失败", key, e);
         }
         return null;
     }

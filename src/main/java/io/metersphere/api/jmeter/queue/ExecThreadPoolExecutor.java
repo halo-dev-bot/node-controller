@@ -57,7 +57,7 @@ public class ExecThreadPoolExecutor {
                     JmeterRunRequestDTO requestDTO = msRejectedExecutionHandler.getBufferQueue().poll();
                     SystemExecTask task = new SystemExecTask(requestDTO);
                     threadPool.submit(task);
-                    LoggerUtil.info("把缓冲区任务重新添加到线程池，报告ID：" + requestDTO.getReportId());
+                    LoggerUtil.info("把缓冲区任务重新添加到线程池", requestDTO.getReportId());
                 }
             }
         }
@@ -111,7 +111,7 @@ public class ExecThreadPoolExecutor {
                 LoggerUtil.info("AllCoreThreads: " + threadPool.prestartAllCoreThreads());
             }
         } catch (Exception e) {
-            LoggerUtil.error("设置线程参数异常：" + e);
+            LoggerUtil.error("设置线程参数异常", e);
         }
     }
 

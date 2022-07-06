@@ -17,7 +17,7 @@ public class BlockingQueueUtil {
                 LoggerUtil.info("执行任务入列：" + key + " 正在处理：" + queue.size());
                 return true;
             } catch (Exception e) {
-                LoggerUtil.error(e);
+                LoggerUtil.error("队列处理异常", key, e);
             }
         }
         return false;
@@ -30,7 +30,7 @@ public class BlockingQueueUtil {
                 queue.remove(key);
             }
         } catch (Exception e) {
-            LoggerUtil.error("获取队列失败：" + e.getMessage());
+            LoggerUtil.error("获取队列失败", key, e);
         }
     }
 }

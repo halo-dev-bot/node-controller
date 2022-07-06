@@ -26,12 +26,12 @@ public class SystemExecTask implements Runnable {
 
     @Override
     public void run() {
-        LoggerUtil.info("开始执行报告ID：【 " + request.getReportId() + " 】,资源ID【 " + request.getTestId() + " 】");
+        LoggerUtil.info("开始执行队列中任务", request.getReportId());
         CommonBeanFactory.getBean(JMeterService.class).addQueue(request);
         if (StringUtils.isNotEmpty(request.getReportId())) {
             Object res = PoolExecBlockingQueueUtil.take(request.getReportId());
             if (res == null && !JmeterThreadUtils.isRunning(request.getReportId(), request.getTestId())) {
-                LoggerUtil.info("执行报告：【 " + request.getReportId() + " 】,资源ID【 " + request.getTestId() + " 】执行超时");
+                LoggerUtil.info("任务执行超时", request.getReportId());
                 ResultDTO dto = new ResultDTO();
                 BeanUtils.copyProperties(dto, request);
                 if (dto.getArbitraryData() == null || dto.getArbitraryData().isEmpty()) {
@@ -49,6 +49,6 @@ public class SystemExecTask implements Runnable {
                 CommonBeanFactory.getBean(ProducerService.class).send(dto, request.getKafkaConfig());
             }
         }
-        LoggerUtil.info("任务：【 " + request.getReportId() + " 】执行完成");
+        LoggerUtil.info("任务执行完成", request.getReportId());
     }
 }

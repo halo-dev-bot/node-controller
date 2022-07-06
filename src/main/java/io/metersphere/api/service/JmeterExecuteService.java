@@ -33,7 +33,9 @@ public class JmeterExecuteService {
 
     public String runStart(JmeterRunRequestDTO runRequest) {
         try {
+            LoggerUtil.info("进入node执行方法开始处理任务", runRequest.getReportId());
             if (runRequest.getKafkaConfig() == null) {
+                LoggerUtil.error("KAFKA配置为空无法执行", runRequest.getReportId());
                 return "KAFKA 初始化失败，请检查配置";
             }
             // 生成附件/JAR文件
@@ -42,7 +44,7 @@ public class JmeterExecuteService {
             String plugJarUrl = urlObject.getProtocol() + "://" + urlObject.getHost() + (urlObject.getPort() > 0 ? ":" + urlObject.getPort() : "") + "/api/jmeter/download/plug/jar";
 
             if (StringUtils.isEmpty(url)) {
-                LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
+                LoggerUtil.info("开始同步上传的JAR：" + jarUrl, runRequest.getReportId());
                 File file = ZipSpider.downloadFile(jarUrl, FileUtils.JAR_FILE_DIR);
                 if (file != null) {
                     ZipSpider.unzip(file.getPath(), FileUtils.JAR_FILE_DIR);
@@ -51,7 +53,7 @@ public class JmeterExecuteService {
                 }
             }
             if (StringUtils.isEmpty(plugUrl)) {
-                LoggerUtil.info("开始同步插件JAR：" + plugJarUrl);
+                LoggerUtil.info("开始同步插件JAR：" + plugJarUrl, runRequest.getReportId());
                 File plugFile = ZipSpider.downloadFile(plugJarUrl, FileUtils.JAR_PLUG_FILE_DIR);
                 if (plugFile != null) {
                     ZipSpider.unzip(plugFile.getPath(), FileUtils.JAR_PLUG_FILE_DIR);
@@ -61,16 +63,18 @@ public class JmeterExecuteService {
             url = jarUrl;
             plugUrl = plugJarUrl;
             enable = runRequest.isEnable();
-            LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl());
+            LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl(), runRequest.getReportId());
 
             File bodyFile = ZipSpider.downloadFile(runRequest.getPlatformUrl(), FileUtils.BODY_FILE_DIR);
             if (bodyFile != null) {
                 ZipSpider.unzip(bodyFile.getPath(), FileUtils.BODY_FILE_DIR);
                 File jmxFile = new File(FileUtils.BODY_FILE_DIR + "/" + runRequest.getReportId() + "_" + runRequest.getTestId() + ".jmx");
+                LoggerUtil.info("下载执行脚本完成：" + jmxFile.getName(), runRequest.getReportId());
                 // 生成执行脚本
                 HashTree testPlan = SaveService.loadTree(jmxFile);
                 // 开始执行
                 runRequest.setHashTree(testPlan);
+                LoggerUtil.info("开始加入队列执行", runRequest.getReportId());
                 jMeterService.run(runRequest);
                 FileUtils.deleteFile(bodyFile.getPath());
             } else {
@@ -78,9 +82,10 @@ public class JmeterExecuteService {
                 MSException.throwException("未找到执行的JMX文件");
             }
         } catch (Exception e) {
-            LoggerUtil.error(e.getMessage());
+            LoggerUtil.error("node处理任务异常", runRequest.getReportId(), e);
             BlockingQueueUtil.remove(runRequest.getReportId());
             PoolExecBlockingQueueUtil.offer(runRequest.getReportId());
+            LoggerUtil.error("准备执行文件异常：【" + runRequest.getReportId() + "】", e);
             return e.getMessage();
         }
         return "SUCCESS";

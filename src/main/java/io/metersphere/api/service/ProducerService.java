@@ -56,12 +56,12 @@ public class ProducerService {
         ProducerService producerServer = CommonBeanFactory.getBean(ProducerService.class);
         try {
             if (producerServer != null) {
-                LoggerUtil.info("执行完成开始同步发送KAFKA【" + dto.getReportId() + "】");
+                LoggerUtil.info("执行完成开始同步发送KAFKA" + dto.getRequestResults().size(), dto.getReportId());
                 producerServer.send(dto.getReportId(), JSON.toJSONString(dto), kafkaConfig);
-                LoggerUtil.info("同步发送报告信息到KAFKA完成【" + dto.getReportId() + "】");
+                LoggerUtil.info("同步发送报告信息到KAFKA完成", dto.getReportId());
             }
         } catch (Exception ex) {
-            LoggerUtil.error("KAFKA 推送结果异常：[" + dto.getReportId() + "]", ex);
+            LoggerUtil.error("KAFKA 推送结果异常", dto.getReportId(), ex);
             // 尝试逐条发送
             if (dto != null && CollectionUtils.isNotEmpty(dto.getRequestResults())) {
                 StringBuffer logMsg = new StringBuffer(dto.getConsole())
@@ -84,7 +84,7 @@ public class ProducerService {
         }
 
         if (dto != null && StringUtils.equals(dto.getReportType(), RunModeConstants.SET_REPORT.name())) {
-            LoggerUtil.info("处理接口集合报告ID：" + dto.getReportId());
+            LoggerUtil.info("处理接口集合报告", dto.getReportId());
         }
     }
 }

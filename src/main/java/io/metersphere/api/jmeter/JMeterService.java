@@ -60,7 +60,7 @@ public class JMeterService {
             LocalRunner runner = new LocalRunner(testPlan);
             runner.run(runRequest.getReportId());
         } catch (Exception e) {
-            LoggerUtil.error(e.getMessage(), e);
+            LoggerUtil.error("Local执行异常", runRequest.getReportId(), e);
             MSException.throwException("读取脚本失败");
         }
     }
