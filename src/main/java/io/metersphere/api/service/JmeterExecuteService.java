@@ -26,6 +26,8 @@ import java.net.URLClassLoader;
 public class JmeterExecuteService {
     @Resource
     private JMeterService jMeterService;
+    @Resource
+    private ProducerService producerService;
 
     private static String url = null;
     private static boolean enable = false;
@@ -64,7 +66,6 @@ public class JmeterExecuteService {
             plugUrl = plugJarUrl;
             enable = runRequest.isEnable();
             LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl(), runRequest.getReportId());
-
             File bodyFile = ZipSpider.downloadFile(runRequest.getPlatformUrl(), FileUtils.BODY_FILE_DIR);
             if (bodyFile != null) {
                 ZipSpider.unzip(bodyFile.getPath(), FileUtils.BODY_FILE_DIR);
@@ -85,7 +86,8 @@ public class JmeterExecuteService {
             LoggerUtil.error("node处理任务异常", runRequest.getReportId(), e);
             BlockingQueueUtil.remove(runRequest.getReportId());
             PoolExecBlockingQueueUtil.offer(runRequest.getReportId());
-            LoggerUtil.error("准备执行文件异常：【" + runRequest.getReportId() + "】", e);
+            LoggerUtil.info("node处理任务异常，补偿一条失败消息", runRequest.getReportId(), e);
+            producerService.send(runRequest, "node处理任务异常：" + e.getMessage());
             return e.getMessage();
         }
         return "SUCCESS";

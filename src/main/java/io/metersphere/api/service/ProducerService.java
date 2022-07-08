@@ -1,9 +1,9 @@
 package io.metersphere.api.service;
 
 import com.alibaba.fastjson.JSON;
-import io.metersphere.api.jmeter.utils.CommonBeanFactory;
 import io.metersphere.config.KafkaConfig;
 import io.metersphere.constants.RunModeConstants;
+import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.RequestResult;
 import io.metersphere.dto.ResultDTO;
 import io.metersphere.utils.LoggerUtil;
@@ -15,6 +15,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +46,21 @@ public class ProducerService {
         }
     }
 
+    public void send(JmeterRunRequestDTO runRequest, String logMessage) {
+        ResultDTO dto = new ResultDTO();
+        BeanUtils.copyProperties(runRequest, dto);
+        dto.setConsole(logMessage);
+        dto.setRequestResults(new LinkedList<>());
+        if (dto.getArbitraryData() == null || dto.getArbitraryData().isEmpty()) {
+            dto.setArbitraryData(new HashMap<String, Object>() {{
+                this.put("TEST_END", true);
+            }});
+        } else {
+            dto.getArbitraryData().put("TEST_END", true);
+        }
+        this.send(dto, runRequest.getKafkaConfig());
+    }
+
     public void send(String key, String message, Map<String, Object> producerProps) {
         KafkaTemplate kafkaTemplate = this.init(producerProps);
         if (kafkaTemplate != null) {
@@ -53,13 +69,10 @@ public class ProducerService {
     }
 
     public void send(ResultDTO dto, Map<String, Object> kafkaConfig) {
-        ProducerService producerServer = CommonBeanFactory.getBean(ProducerService.class);
         try {
-            if (producerServer != null) {
-                LoggerUtil.info("执行完成开始同步发送KAFKA" + dto.getRequestResults().size(), dto.getReportId());
-                producerServer.send(dto.getReportId(), JSON.toJSONString(dto), kafkaConfig);
-                LoggerUtil.info("同步发送报告信息到KAFKA完成", dto.getReportId());
-            }
+            LoggerUtil.info("执行完成开始同步发送KAFKA" + dto.getRequestResults().size(), dto.getReportId());
+            this.send(dto.getReportId(), JSON.toJSONString(dto), kafkaConfig);
+            LoggerUtil.info("同步发送报告信息到KAFKA完成", dto.getReportId());
         } catch (Exception ex) {
             LoggerUtil.error("KAFKA 推送结果异常", dto.getReportId(), ex);
             // 尝试逐条发送
@@ -77,7 +90,7 @@ public class ProducerService {
                         resultDTO.setRequestResults(new LinkedList<RequestResult>() {{
                             this.add(item);
                         }});
-                        producerServer.send(dto.getReportId(), JSON.toJSONString(resultDTO), kafkaConfig);
+                        this.send(dto.getReportId(), JSON.toJSONString(resultDTO), kafkaConfig);
                     }
                 });
             }
