@@ -3,7 +3,7 @@
  */
 package io.metersphere.api.service;
 
-import io.metersphere.api.module.JvmInfo;
+import io.metersphere.api.vo.JvmInfo;
 
 /**
  * @author mr.zhao

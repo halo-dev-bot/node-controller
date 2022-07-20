@@ -3,7 +3,7 @@ package io.metersphere.api.controller;
 import io.metersphere.api.jmeter.JmeterLoggerAppender;
 import io.metersphere.api.jmeter.queue.BlockingQueueUtil;
 import io.metersphere.api.jmeter.utils.JmeterThreadUtils;
-import io.metersphere.api.module.JvmInfo;
+import io.metersphere.api.vo.JvmInfo;
 import io.metersphere.api.service.JmeterExecuteService;
 import io.metersphere.api.service.JvmService;
 import io.metersphere.constants.RunModeConstants;
