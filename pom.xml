@@ -10,11 +10,12 @@
     </parent>
     <groupId>io.metersphere</groupId>
     <artifactId>node-controller</artifactId>
-    <version>2.0</version>
+    <version>${revision}</version>
     <name>node-controller</name>
     <description>node-controller</description>
 
     <properties>
+        <revision>2.0</revision>
         <java.version>11</java.version>
         <jmeter.version>5.4.3</jmeter.version>
         <nacos.version>1.1.3</nacos.version>
@@ -81,7 +82,7 @@
         <dependency>
             <groupId>io.metersphere</groupId>
             <artifactId>ms-jmeter-core</artifactId>
-            <version>jmeter-5.5_2</version>
+            <version>${revision}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>netty</artifactId>
