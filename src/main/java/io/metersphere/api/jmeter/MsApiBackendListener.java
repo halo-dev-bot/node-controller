@@ -48,6 +48,7 @@ public class MsApiBackendListener implements MsExecListener {
                 BlockingQueueUtil.remove(dto.getReportId());
             }
             // 整理执行结果
+            LoggerUtil.info("开始处理数据：" + queues.size(), dto.getReportId());
             JMeterBase.resultFormatting(queues, dto);
             if (dto.isRetryEnable()) {
                 LoggerUtil.info("重试结果处理开始", dto.getReportId());
