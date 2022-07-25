@@ -78,6 +78,18 @@
             </exclusions>
         </dependency>
 
+        <!--  手动引入，不然会有 java.lang.NoClassDefFoundError: Could not initialize class org.apache.dubbo.config.ReferenceConfig      -->
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo</artifactId>
+            <version>${dubbo.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>spring-context</artifactId>
+                    <groupId>org.springframework</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <!-- jmeter执行机 -->
         <dependency>
             <groupId>io.metersphere</groupId>
