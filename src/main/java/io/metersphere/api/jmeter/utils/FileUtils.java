@@ -8,7 +8,7 @@ import java.io.*;
 
 public class FileUtils {
     public static final String BODY_FILE_DIR = "/opt/metersphere/data/body";
-    public static final String JAR_FILE_DIR = "/opt/metersphere/data/node/jar";
+    public static final String PROJECT_JAR_FILE_DIR = "/opt/metersphere/data/node/jar";
     public static final String JAR_PLUG_FILE_DIR = "/opt/metersphere/data/node/plug/jar";
 
     public static void createFiles(MultipartFile[] bodyFiles, String path) {

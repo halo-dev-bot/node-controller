@@ -179,7 +179,7 @@ public class ZipSpider {
                     httpURLConnection.disconnect();
                 }
             } catch (Exception e) {
-
+                LoggerUtil.error(e);
             }
         }
         return null;

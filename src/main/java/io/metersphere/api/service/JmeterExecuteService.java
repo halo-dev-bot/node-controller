@@ -1,6 +1,8 @@
 package io.metersphere.api.service;
 
+import com.alibaba.fastjson.JSON;
 import io.metersphere.api.jmeter.JMeterService;
+import io.metersphere.api.jmeter.MsDriverManager;
 import io.metersphere.api.jmeter.queue.BlockingQueueUtil;
 import io.metersphere.api.jmeter.queue.PoolExecBlockingQueueUtil;
 import io.metersphere.api.jmeter.utils.FileUtils;
@@ -8,9 +10,10 @@ import io.metersphere.api.jmeter.utils.MSException;
 import io.metersphere.api.service.utils.ZipSpider;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.utils.LoggerUtil;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.jmeter.NewDriver;
 import org.apache.jmeter.save.SaveService;
+import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jorphan.collections.HashTree;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -18,7 +21,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.io.File;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -28,10 +30,6 @@ public class JmeterExecuteService {
     private JMeterService jMeterService;
     @Resource
     private ProducerService producerService;
-
-    private static String url = null;
-    private static boolean enable = false;
-    private static String plugUrl = null;
 
     public String runStart(JmeterRunRequestDTO runRequest) {
         try {
@@ -44,17 +42,10 @@ public class JmeterExecuteService {
             URL urlObject = new URL(runRequest.getPlatformUrl());
             String jarUrl = urlObject.getProtocol() + "://" + urlObject.getHost() + (urlObject.getPort() > 0 ? ":" + urlObject.getPort() : "") + "/api/jmeter/download/jar";
             String plugJarUrl = urlObject.getProtocol() + "://" + urlObject.getHost() + (urlObject.getPort() > 0 ? ":" + urlObject.getPort() : "") + "/api/jmeter/download/plug/jar";
+            LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
+            MsDriverManager.downloadJar(runRequest, jarUrl);
 
-            if (StringUtils.isEmpty(url)) {
-                LoggerUtil.info("开始同步上传的JAR：" + jarUrl, runRequest.getReportId());
-                File file = ZipSpider.downloadFile(jarUrl, FileUtils.JAR_FILE_DIR);
-                if (file != null) {
-                    ZipSpider.unzip(file.getPath(), FileUtils.JAR_FILE_DIR);
-                    this.loadJar(FileUtils.JAR_FILE_DIR);
-                    FileUtils.deleteFile(file.getPath());
-                }
-            }
-            if (StringUtils.isEmpty(plugUrl)) {
+            if (StringUtils.isEmpty(JMeterRunContext.getContext().getPlugUrl())) {
                 LoggerUtil.info("开始同步插件JAR：" + plugJarUrl, runRequest.getReportId());
                 File plugFile = ZipSpider.downloadFile(plugJarUrl, FileUtils.JAR_PLUG_FILE_DIR);
                 if (plugFile != null) {
@@ -62,9 +53,9 @@ public class JmeterExecuteService {
                     this.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
                 }
             }
-            url = jarUrl;
-            plugUrl = plugJarUrl;
-            enable = runRequest.isEnable();
+            JMeterRunContext.getContext().setPlugUrl(plugJarUrl);
+            JMeterRunContext.getContext().setEnable(runRequest.isEnable());
+
             LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl(), runRequest.getReportId());
             File bodyFile = ZipSpider.downloadFile(runRequest.getPlatformUrl(), FileUtils.BODY_FILE_DIR);
             if (bodyFile != null) {
@@ -73,6 +64,8 @@ public class JmeterExecuteService {
                 LoggerUtil.info("下载执行脚本完成：" + jmxFile.getName(), runRequest.getReportId());
                 // 生成执行脚本
                 HashTree testPlan = SaveService.loadTree(jmxFile);
+                TestPlan test = (TestPlan) testPlan.getArray()[0];
+                test.setProperty("JAR_PATH", JSON.toJSONString(MsDriverManager.loadJar(runRequest)));
                 // 开始执行
                 runRequest.setHashTree(testPlan);
                 LoggerUtil.info("开始加入队列执行", runRequest.getReportId());
@@ -91,15 +84,6 @@ public class JmeterExecuteService {
             return e.getMessage();
         }
         return "SUCCESS";
-    }
-
-    private void loadJar(String path) {
-        try {
-            NewDriver.addPath(path);
-        } catch (MalformedURLException e) {
-            LoggerUtil.error(e.getMessage(), e);
-            MSException.throwException(e.getMessage());
-        }
     }
 
     private static File[] listJars(File dir) {
@@ -145,21 +129,15 @@ public class JmeterExecuteService {
 
     @Scheduled(cron = "0 0/5 * * * ?")
     public void execute() {
-        if (StringUtils.isNotEmpty(url) && enable) {
-            FileUtils.deletePath(FileUtils.JAR_FILE_DIR);
-            File file = ZipSpider.downloadFile(url, FileUtils.JAR_FILE_DIR);
-            if (file != null) {
-                ZipSpider.unzip(file.getPath(), FileUtils.JAR_FILE_DIR);
-                this.loadJar(FileUtils.JAR_FILE_DIR);
-                FileUtils.deleteFile(file.getPath());
-            }
+        if (JMeterRunContext.getContext().isEnable() && MapUtils.isNotEmpty(JMeterRunContext.getContext().getProjectUrls())) {
+            MsDriverManager.downloadJar(JMeterRunContext.getContext().getProjectUrls());
             // 清理历史jar
             FileUtils.deletePath(FileUtils.JAR_PLUG_FILE_DIR);
-            LoggerUtil.info("开始同步插件JAR：" + plugUrl);
-            File plugFile = ZipSpider.downloadFile(plugUrl, FileUtils.JAR_PLUG_FILE_DIR);
+            LoggerUtil.info("开始同步插件JAR：" + JMeterRunContext.getContext().getPlugUrl());
+            File plugFile = ZipSpider.downloadFile(JMeterRunContext.getContext().getPlugUrl(), FileUtils.JAR_PLUG_FILE_DIR);
             if (plugFile != null) {
                 ZipSpider.unzip(plugFile.getPath(), FileUtils.JAR_PLUG_FILE_DIR);
-                FileUtils.deleteFile(file.getPath());
+                FileUtils.deleteFile(plugFile.getPath());
                 this.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
             }
         }

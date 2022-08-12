@@ -1,10 +1,7 @@
 package io.metersphere.config;
 
 import io.metersphere.api.jmeter.JMeterService;
-import io.metersphere.api.jmeter.utils.FileUtils;
-import io.metersphere.api.jmeter.utils.MSException;
 import io.metersphere.utils.LoggerUtil;
-import org.apache.jmeter.NewDriver;
 import org.python.core.Options;
 import org.python.util.PythonInterpreter;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +10,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.net.MalformedURLException;
 
 @Component
 public class AppStartListener implements ApplicationListener<ApplicationReadyEvent> {
@@ -28,7 +24,6 @@ public class AppStartListener implements ApplicationListener<ApplicationReadyEve
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         System.out.println("================= NODE 应用启动 START =================");
         System.setProperty("jmeter.home", jmeterHome);
-        loadJars();
         initPythonEnv();
     }
 
@@ -48,18 +43,6 @@ public class AppStartListener implements ApplicationListener<ApplicationReadyEve
         } catch (Exception e) {
             e.printStackTrace();
             LoggerUtil.error(e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 加载jar包
-     */
-    private void loadJars() {
-        try {
-            NewDriver.addPath(FileUtils.JAR_FILE_DIR);
-        } catch (MalformedURLException e) {
-            LoggerUtil.error(e.getMessage(), e);
-            MSException.throwException(e.getMessage());
         }
     }
 }
