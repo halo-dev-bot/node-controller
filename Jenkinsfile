@@ -13,8 +13,10 @@ pipeline {
             label 'metersphere'
         }
     }
-    options { quietPeriod(600) }
-    environment { 
+    triggers {
+        pollSCM('0 * * * *')
+    }
+    environment {
         IMAGE_NAME = 'ms-node-controller'
         IMAGE_PREFIX = 'registry.cn-qingdao.aliyuncs.com/metersphere'
     }
