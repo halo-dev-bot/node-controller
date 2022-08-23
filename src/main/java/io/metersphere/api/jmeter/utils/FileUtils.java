@@ -54,7 +54,9 @@ public class FileUtils {
 
         File[] files = getFiles(file);
         for (int i = 0; i < files.length; i++) {
-            files[i].delete();
+            if (files[i].exists()) {
+                files[i].delete();
+            }
         }
     }
 }

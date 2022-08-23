@@ -9,7 +9,7 @@ import io.metersphere.utils.LoggerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JmeterLoggerAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+public class JMeterLoggerAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     public static Logger logger = LoggerFactory.getLogger("JMETER");
     public static boolean enable = false;
 

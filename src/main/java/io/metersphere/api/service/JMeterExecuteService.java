@@ -25,7 +25,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 @Service
-public class JmeterExecuteService {
+public class JMeterExecuteService {
     @Resource
     private JMeterService jMeterService;
     @Resource

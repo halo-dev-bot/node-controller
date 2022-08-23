@@ -1,10 +1,10 @@
 package io.metersphere.api.controller;
 
-import io.metersphere.api.jmeter.JmeterLoggerAppender;
+import io.metersphere.api.jmeter.JMeterLoggerAppender;
 import io.metersphere.api.jmeter.queue.BlockingQueueUtil;
 import io.metersphere.api.jmeter.utils.JmeterThreadUtils;
 import io.metersphere.api.vo.JvmInfo;
-import io.metersphere.api.service.JmeterExecuteService;
+import io.metersphere.api.service.JMeterExecuteService;
 import io.metersphere.api.service.JvmService;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.JmeterRunRequestDTO;
@@ -20,7 +20,7 @@ import java.util.List;
 public class JmeterExecuteController {
 
     @Resource
-    private JmeterExecuteService jmeterExecuteService;
+    private JMeterExecuteService jmeterExecuteService;
 
     @PostMapping(value = "/api/start")
     public String apiStartRun(@RequestBody JmeterRunRequestDTO runRequest) {
@@ -54,6 +54,6 @@ public class JmeterExecuteController {
 
     @GetMapping("/log/debug/{enable}")
     public boolean debug(@PathVariable boolean enable) {
-        return JmeterLoggerAppender.enable = enable;
+        return JMeterLoggerAppender.enable = enable;
     }
 }
