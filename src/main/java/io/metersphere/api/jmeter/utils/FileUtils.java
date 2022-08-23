@@ -1,6 +1,7 @@
 package io.metersphere.api.jmeter.utils;
 
 import io.metersphere.utils.LoggerUtil;
+import org.apache.commons.lang3.ArrayUtils;
 import org.aspectj.util.FileUtil;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,9 +54,11 @@ public class FileUtils {
         }
 
         File[] files = getFiles(file);
-        for (int i = 0; i < files.length; i++) {
-            if (files[i].exists()) {
-                files[i].delete();
+        if (ArrayUtils.isNotEmpty(files)) {
+            for (int i = 0; i < files.length; i++) {
+                if (files[i] != null && files[i].exists()) {
+                    files[i].delete();
+                }
             }
         }
     }
