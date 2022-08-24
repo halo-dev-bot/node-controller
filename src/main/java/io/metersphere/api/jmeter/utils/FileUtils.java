@@ -49,15 +49,16 @@ public class FileUtils {
 
     public static void deletePath(String path) {
         File file = new File(path);
-        if (file.isDirectory()) {// $NON-NLS-1$
+        if (file != null && file.isDirectory()) {// $NON-NLS-1$
             file = new File(path + "/");
         }
-
-        File[] files = getFiles(file);
-        if (ArrayUtils.isNotEmpty(files)) {
-            for (int i = 0; i < files.length; i++) {
-                if (files[i] != null && files[i].exists()) {
-                    files[i].delete();
+        if (file != null) {
+            File[] files = getFiles(file);
+            if (ArrayUtils.isNotEmpty(files)) {
+                for (int i = 0; i < files.length; i++) {
+                    if (files[i] != null && files[i].exists()) {
+                        files[i].delete();
+                    }
                 }
             }
         }

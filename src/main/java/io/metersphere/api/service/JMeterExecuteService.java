@@ -82,6 +82,7 @@ public class JMeterExecuteService {
             PoolExecBlockingQueueUtil.offer(runRequest.getReportId());
             LoggerUtil.info("node处理任务异常，补偿一条失败消息", runRequest.getReportId(), e);
             producerService.send(runRequest, "node处理任务异常：" + e.getMessage());
+            LoggerUtil.error("处理脚本异常" + runRequest.getReportId(), e);
         }
         return "SUCCESS";
     }

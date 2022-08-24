@@ -1,6 +1,7 @@
 package io.metersphere.api.service.utils;
 
 import io.metersphere.utils.LoggerUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.config.CSVDataSet;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPFileArg;
@@ -141,11 +142,16 @@ public class ZipSpider {
 
             bin = new BufferedInputStream(httpURLConnection.getInputStream());
             String fileName = httpURLConnection.getHeaderField("Content-Disposition");
-            fileName = URLDecoder.decode(fileName.substring(fileName.indexOf("filename") + 10, fileName.length() - 1), "UTF-8");
-            String path = downloadDir + File.separatorChar + fileName;// 指定存放位置
+            if (StringUtils.isEmpty(fileName)) {
+                LoggerUtil.info(urlPath + " 下载的文件名称为空", fileName);
+                fileName = "";
+            } else {
+                fileName = URLDecoder.decode(fileName.substring(fileName.indexOf("filename") + 10, fileName.length() - 1), "UTF-8");
+            }
+            String path = StringUtils.join(downloadDir, File.separatorChar, fileName);// 指定存放位置
             File file = new File(path);
             // 校验文件夹目录是否存在，不存在就创建一个目录
-            if (file.getParentFile() != null && !file.getParentFile().exists()) {
+            if (file != null && file.getParentFile() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
 
