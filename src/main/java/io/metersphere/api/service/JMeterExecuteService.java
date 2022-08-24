@@ -44,6 +44,7 @@ public class JMeterExecuteService {
             String plugJarUrl = urlObject.getProtocol() + "://" + urlObject.getHost() + (urlObject.getPort() > 0 ? ":" + urlObject.getPort() : "") + "/api/jmeter/download/plug/jar";
             LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
             MsDriverManager.downloadJar(runRequest, jarUrl);
+            LoggerUtil.info("下载完成上传的JAR：" + jarUrl);
 
             if (StringUtils.isEmpty(JMeterRunContext.getContext().getPlugUrl())) {
                 LoggerUtil.info("开始同步插件JAR：" + plugJarUrl, runRequest.getReportId());
@@ -76,7 +77,7 @@ public class JMeterExecuteService {
                 MSException.throwException("未找到执行的JMX文件");
             }
         } catch (Exception e) {
-            LoggerUtil.error("node处理任务异常", runRequest.getReportId(), e);
+            LoggerUtil.error("node处理任务异常：" + runRequest.getReportId(), e);
             BlockingQueueUtil.remove(runRequest.getReportId());
             PoolExecBlockingQueueUtil.offer(runRequest.getReportId());
             LoggerUtil.info("node处理任务异常，补偿一条失败消息", runRequest.getReportId(), e);
