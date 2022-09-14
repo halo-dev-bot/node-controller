@@ -74,6 +74,7 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
                 dto.getArbitraryData().put("TEST_END", true);
             }
             FileUtils.deleteFile(FileUtils.BODY_FILE_DIR + "/" + dto.getReportId() + "_" + dto.getTestId() + ".jmx");
+            FileUtils.deleteBodyFiles(dto.getReportId() + "_" + dto.getTestId());
             LoggerUtil.info("node整体执行完成", dto.getReportId());
             // 存储结果
             CommonBeanFactory.getBean(ProducerService.class).send(dto, producerProps);

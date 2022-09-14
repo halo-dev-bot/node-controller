@@ -63,4 +63,12 @@ public class FileUtils {
             }
         }
     }
+
+    public static void deleteBodyFiles(String requestId) {
+        File file = new File(BODY_FILE_DIR + File.separator + requestId);
+        FileUtil.deleteContents(file);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
 }
