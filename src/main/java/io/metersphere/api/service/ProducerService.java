@@ -1,6 +1,7 @@
 package io.metersphere.api.service;
 
 import com.alibaba.fastjson.JSON;
+import io.metersphere.api.jmeter.dto.MsgDTO;
 import io.metersphere.api.service.utils.ResultConversionUtil;
 import io.metersphere.config.KafkaConfig;
 import io.metersphere.constants.RunModeConstants;
@@ -25,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ProducerService {
     // 初始化不同地址kafka,每个地址初始化一个线程
     private Map<String, KafkaTemplate> kafkaTemplateMap = new ConcurrentHashMap<>();
+    public static final String DEBUG_TOPICS_KEY = "MS-API-DEBUG-KEY";
 
     public KafkaTemplate init(Map<String, Object> producerProps) {
         try {
@@ -66,6 +68,13 @@ public class ProducerService {
         KafkaTemplate kafkaTemplate = this.init(producerProps);
         if (kafkaTemplate != null) {
             kafkaTemplate.send(KafkaConfig.TOPICS, key, message);
+        }
+    }
+
+    public void sendDebug(String key, MsgDTO dto, Map<String, Object> producerProps) {
+        KafkaTemplate kafkaTemplate = this.init(producerProps);
+        if (kafkaTemplate != null && producerProps.containsKey(DEBUG_TOPICS_KEY)) {
+            kafkaTemplate.send(producerProps.get(DEBUG_TOPICS_KEY).toString(), key, JSON.toJSONString(dto));
         }
     }
 

@@ -3,12 +3,13 @@ package io.metersphere.api.controller;
 import io.metersphere.api.jmeter.JmeterLoggerAppender;
 import io.metersphere.api.jmeter.queue.BlockingQueueUtil;
 import io.metersphere.api.jmeter.utils.JmeterThreadUtils;
-import io.metersphere.api.vo.JvmInfo;
 import io.metersphere.api.service.JmeterExecuteService;
 import io.metersphere.api.service.JvmService;
+import io.metersphere.api.vo.JvmInfo;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.jmeter.LocalRunner;
+import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,13 @@ public class JmeterExecuteController {
         }
         return "当前报告 " + runRequest.getReportId() + " 正在执行中";
     }
+
+    @PostMapping(value = "/debug")
+    public String apiDebug(@RequestBody JmeterRunRequestDTO runRequest) {
+        LoggerUtil.info("接收到测试请求 start ");
+        return jmeterExecuteService.debug(runRequest);
+    }
+
 
     @GetMapping("/get/running/queue/{reportId}")
     public boolean getRunningQueue(@PathVariable String reportId) {

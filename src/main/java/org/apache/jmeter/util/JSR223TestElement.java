@@ -19,7 +19,6 @@ package org.apache.jmeter.util;
 
 import groovy.lang.GroovyClassLoader;
 import io.metersphere.api.jmeter.utils.FileUtils;
-import io.metersphere.jmeter.LoadJarService;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.map.LRUMap;
@@ -57,8 +56,6 @@ import java.util.Properties;
 public abstract class JSR223TestElement extends ScriptingTestElement
         implements Serializable, TestStateListener {
     private static final long serialVersionUID = 233L;
-
-    private LoadJarService loadJarService;
 
     private static final Logger logger = LoggerFactory.getLogger(JSR223TestElement.class);
     /**

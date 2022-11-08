@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FixedCapacityUtils {
     public static Map<Long, StringBuffer> fixedCapacityCache = Collections.synchronizedMap(new LRUHashMap<>());
@@ -30,4 +31,30 @@ public class FixedCapacityUtils {
             return size() > capacity;
         }
     }
+
+    public static String getJmeterLogger(String reportId, String testId, boolean isClear) {
+        String messageKey = reportId + "_" + testId;
+        try {
+            Long startTime = FixedCapacityUtils.jmeterLogTask.get(messageKey);
+            if (startTime == null) {
+                startTime = FixedCapacityUtils.jmeterLogTask.get("[" + messageKey + "]");
+            }
+            if (startTime == null) {
+                startTime = System.currentTimeMillis();
+            }
+            Long endTime = System.currentTimeMillis();
+            Long finalStartTime = startTime;
+            String logMessage = FixedCapacityUtils.fixedCapacityCache.entrySet().stream()
+                    .filter(map -> map.getKey() > finalStartTime && map.getKey() < endTime)
+                    .map(map -> map.getValue()).collect(Collectors.joining());
+            return logMessage;
+        } catch (Exception e) {
+            return "";
+        } finally {
+            if (FixedCapacityUtils.jmeterLogTask.containsKey(messageKey) && isClear) {
+                FixedCapacityUtils.jmeterLogTask.remove(messageKey);
+            }
+        }
+    }
+
 }

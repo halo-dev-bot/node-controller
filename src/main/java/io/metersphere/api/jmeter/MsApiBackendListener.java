@@ -50,7 +50,7 @@ public class MsApiBackendListener implements MsExecListener {
         if (StringUtils.isNotEmpty(dto.getReportId())) {
             BlockingQueueUtil.remove(dto.getReportId());
         }
-        dto.setConsole(getJmeterLogger(dto.getReportId(), dto.getTestId()));
+        dto.setConsole(FixedCapacityUtils.getJmeterLogger(dto.getReportId(), dto.getTestId(), true));
         if (dto.getArbitraryData() == null || dto.getArbitraryData().isEmpty()) {
             dto.setArbitraryData(new HashMap<String, Object>() {{
                 this.put("TEST_END", true);
@@ -64,36 +64,11 @@ public class MsApiBackendListener implements MsExecListener {
         LoggerUtil.info(JvmService.jvmInfo().toString());
     }
 
-    private String getJmeterLogger(String reportId, String testId) {
-        String messageKey = reportId + "_" + testId;
-        try {
-            Long startTime = FixedCapacityUtils.jmeterLogTask.get(messageKey);
-            if (startTime == null) {
-                startTime = FixedCapacityUtils.jmeterLogTask.get("[" + messageKey + "]");
-            }
-            if (startTime == null) {
-                startTime = System.currentTimeMillis();
-            }
-            Long endTime = System.currentTimeMillis();
-            Long finalStartTime = startTime;
-            String logMessage = FixedCapacityUtils.fixedCapacityCache.entrySet().stream()
-                    .filter(map -> map.getKey() > finalStartTime && map.getKey() < endTime)
-                    .map(map -> map.getValue()).collect(Collectors.joining());
-            return logMessage;
-        } catch (Exception e) {
-            return "";
-        } finally {
-            if (FixedCapacityUtils.jmeterLogTask.containsKey(messageKey)) {
-                FixedCapacityUtils.jmeterLogTask.remove(messageKey);
-            }
-        }
-    }
-
     private void clearLoops(List<SampleResult> results) {
         if (CollectionUtils.isNotEmpty(results)) {
             results = results.stream().filter(sampleResult ->
-                    StringUtils.isNotEmpty(sampleResult.getSampleLabel())
-                            && !sampleResult.getSampleLabel().startsWith("MS_CLEAR_LOOPS_VAR_"))
+                            StringUtils.isNotEmpty(sampleResult.getSampleLabel())
+                                    && !sampleResult.getSampleLabel().startsWith("MS_CLEAR_LOOPS_VAR_"))
                     .collect(Collectors.toList());
         }
     }
