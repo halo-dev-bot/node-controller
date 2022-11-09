@@ -1,9 +1,6 @@
 package io.metersphere.api.service.utils;
 
-import io.metersphere.api.vo.ApiScenarioReportVo;
-import io.metersphere.api.vo.ErrorReportLibraryParseVo;
-import io.metersphere.api.vo.ExecuteResultEnum;
-import io.metersphere.api.vo.ScenarioStatusEnum;
+import io.metersphere.api.vo.*;
 import io.metersphere.dto.RequestResult;
 import io.metersphere.dto.ResultDTO;
 import io.metersphere.utils.LoggerUtil;
@@ -15,8 +12,11 @@ import java.util.List;
 
 public class ResultConversionUtil {
 
-    public static String getStatus(ResultDTO dto) {
+    public static ResultVO getStatus(ResultDTO dto) {
         List<ApiScenarioReportVo> requestResults = getApiScenarioReportResults(dto.getReportId(), dto.getRequestResults());
+        ResultVO resultVO = new ResultVO();
+        resultVO.setScenarioSuccess(requestResults.stream().filter(requestResult -> StringUtils.equalsIgnoreCase(requestResult.getStatus(),ScenarioStatusEnum.Success.name())).count());
+        resultVO.setScenarioTotal(requestResults.size());
         long errorSize = requestResults.stream().filter(requestResult ->
                 StringUtils.equalsIgnoreCase(requestResult.getStatus(), ScenarioStatusEnum.Error.name())).count();
 
@@ -34,7 +34,8 @@ public class ResultConversionUtil {
             LoggerUtil.info("资源 " + dto.getTestId() + " 执行超时", dto.getReportId());
             status = ScenarioStatusEnum.Timeout.name();
         }
-        return status;
+        resultVO.setStatus(status);
+        return resultVO;
     }
 
     public static List<ApiScenarioReportVo> getApiScenarioReportResults(String reportId, List<RequestResult> requestResults) {
