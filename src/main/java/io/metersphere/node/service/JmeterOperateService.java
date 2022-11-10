@@ -4,7 +4,6 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
-import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.InvocationBuilder;
 import io.metersphere.node.controller.request.TestRequest;
@@ -59,37 +58,24 @@ public class JmeterOperateService {
     }
 
     private void startContainer(TestRequest testRequest, DockerClient dockerClient, String testId, String containerImage) {
-        // 创建 hostConfig
-        HostConfig hostConfig = HostConfig.newHostConfig();
-        hostConfig.withNetworkMode("host");
-        String[] envs = getEnvs(testRequest);
-        String containerId = DockerClientService.createContainers(dockerClient, testId, containerImage, hostConfig, envs).getId();
-
-        DockerClientService.startContainer(dockerClient, containerId);
-        LoggerUtil.info("Container create started containerId: " + containerId);
-
         String topic = testRequest.getEnv().getOrDefault("LOG_TOPIC", "JMETER_LOGS");
         String reportId = testRequest.getEnv().get("REPORT_ID");
 
-        dockerClient.waitContainerCmd(containerId)
-                .exec(new WaitContainerResultCallback() {
-                    @Override
-                    public void onComplete() {
-                        // 清理文件夹
-                        try {
-                            if (DockerClientService.existContainer(dockerClient, containerId) > 0) {
-//                                copyTestResources(dockerClient, containerId, reportId, resourceIndex);
-                                DockerClientService.removeContainer(dockerClient, containerId);
-                            }
-                            LoggerUtil.info("Remove container completed: " + containerId);
-                        } catch (Exception e) {
-                            LoggerUtil.error("Remove container error: ", e);
-                        }
-                        LoggerUtil.info("completed....");
-                    }
-                });
 
-        dockerClient.logContainerCmd(containerId)
+        String testContainerId = DockerClientService.createContainers(dockerClient, testRequest, testId, containerImage).getId();
+        DockerClientService.startContainer(dockerClient, testContainerId);
+        LoggerUtil.info("Container create started testContainerId: " + testContainerId);
+
+        String reportContainerId = DockerClientService.createReportContainers(dockerClient, testRequest, testId, containerImage).getId();
+        DockerClientService.startContainer(dockerClient, reportContainerId);
+        LoggerUtil.info("Container create started reportContainerId: " + reportContainerId);
+
+
+        removeContainer(dockerClient, testContainerId);
+
+        removeContainer(dockerClient, reportContainerId);
+
+        dockerClient.logContainerCmd(testContainerId)
                 .withFollowStream(true)
                 .withStdOut(true)
                 .withStdErr(true)
@@ -109,6 +95,26 @@ public class JmeterOperateService {
                             stopContainer(testId);
                         }
                         LoggerUtil.info(log);
+                    }
+                });
+    }
+
+    private void removeContainer(DockerClient dockerClient, String containerId) {
+        dockerClient.waitContainerCmd(containerId)
+                .exec(new WaitContainerResultCallback() {
+                    @Override
+                    public void onComplete() {
+                        // 清理文件夹
+                        try {
+                            if (DockerClientService.existContainer(dockerClient, containerId) > 0) {
+//                                copyTestResources(dockerClient, testContainerId, reportId, resourceIndex);
+                                DockerClientService.removeContainer(dockerClient, containerId);
+                            }
+                            LoggerUtil.info("Remove container completed: " + containerId);
+                        } catch (Exception e) {
+                            LoggerUtil.error("Remove container error: ", e);
+                        }
+                        LoggerUtil.info("completed....");
                     }
                 });
     }
@@ -186,10 +192,6 @@ public class JmeterOperateService {
         }
     }
 
-    private String[] getEnvs(TestRequest testRequest) {
-        Map<String, String> env = testRequest.getEnv();
-        return env.keySet().stream().map(k -> k + "=" + env.get(k)).toArray(String[]::new);
-    }
 
     private void searchImage(DockerClient dockerClient, String imageName) {
         // image
