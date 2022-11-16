@@ -32,7 +32,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class JMeterExecuteService {
@@ -67,6 +66,8 @@ public class JMeterExecuteService {
 
             LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl(), runRequest.getReportId());
             if (runRequest.getHashTree() != null) {
+                TestPlan test = (TestPlan) runRequest.getHashTree().getArray()[0];
+                test.setProperty(ExtendedParameter.JAR_PATH, JsonUtils.toJSONString(MsDriverManager.loadJar(runRequest)));
                 jMeterService.run(runRequest);
                 return "SUCCESS";
             }
@@ -78,7 +79,7 @@ public class JMeterExecuteService {
                 // 生成执行脚本
                 HashTree testPlan = SaveService.loadTree(jmxFile);
                 TestPlan test = (TestPlan) testPlan.getArray()[0];
-                test.setProperty("JAR_PATH", JsonUtils.toJSONString(MsDriverManager.loadJar(runRequest)));
+                test.setProperty(ExtendedParameter.JAR_PATH, JsonUtils.toJSONString(MsDriverManager.loadJar(runRequest)));
                 // 开始执行
                 runRequest.setHashTree(testPlan);
                 LoggerUtil.info("开始加入队列执行", runRequest.getReportId());
@@ -142,19 +143,13 @@ public class JMeterExecuteService {
 
     public String debug(JmeterRunRequestDTO runRequest) {
         try {
-            if (runRequest == null || (MapUtils.isNotEmpty(runRequest.getExtendedParameters())
-                    && !runRequest.getExtendedParameters().containsKey(ExtendedParameter.JMX))) {
+            if (runRequest == null || StringUtils.isBlank(runRequest.getJmxScript())) {
                 LoggerUtil.info("执行文件为空，无法执行", runRequest.getReportId());
                 return "执行文件为空，无法执行！";
             }
-            if (MapUtils.isEmpty(runRequest.getExtendedParameters())) {
-                runRequest.setExtendedParameters(Map.of(LoggerUtil.DEBUG, true));
-            } else {
-                runRequest.getExtendedParameters().put(LoggerUtil.DEBUG, true);
-            }
-            InputStream inputSource = getStrToStream(runRequest.getExtendedParameters().get(ExtendedParameter.JMX).toString());
+            runRequest.getExtendedParameters().put(LoggerUtil.DEBUG, true);
+            InputStream inputSource = getStrToStream(runRequest.getJmxScript());
             runRequest.setHashTree(JMeterService.getHashTree(SaveService.loadElement(inputSource)));
-            runRequest.getExtendedParameters().remove(ExtendedParameter.JMX);
             runRequest.setDebug(true);
             List<BodyFile> files = new ArrayList<>();
             FileUtils.getFiles(runRequest.getHashTree(), files);
