@@ -11,7 +11,7 @@ import io.metersphere.node.util.CompressUtils;
 import io.metersphere.node.util.DockerClientService;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
