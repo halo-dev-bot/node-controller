@@ -37,6 +37,10 @@ public class DockerClientService {
                 jmeterCores = "1-" + (cores - 1);
                 reportCores = "0";
             }
+            if (cores >= 8) {
+                jmeterCores = "2-" + (cores - 1);
+                reportCores = "0-1";
+            }
         }
     }
 
