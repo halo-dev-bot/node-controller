@@ -11,6 +11,7 @@ import io.metersphere.api.service.utils.BodyFile;
 import io.metersphere.api.service.utils.BodyFileRequest;
 import io.metersphere.api.service.utils.URLParserUtil;
 import io.metersphere.api.service.utils.ZipSpider;
+import io.metersphere.api.vo.ScriptData;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.collections.MapUtils;
@@ -21,6 +22,7 @@ import org.apache.jmeter.save.SaveService;
 import org.apache.jorphan.collections.HashTree;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.io.ByteArrayInputStream;
@@ -30,14 +32,14 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class JmeterExecuteService {
     @Resource
     private JMeterService jMeterService;
+    @Resource
+    private RestTemplate restTemplate;
 
     private static String url = null;
     private static boolean enable = false;
@@ -153,20 +155,39 @@ public class JmeterExecuteService {
         }
     }
 
+    private String getForObject(String url, Object object) {
+        StringBuffer stringBuffer = new StringBuffer(url);
+        if (object instanceof Map) {
+            Iterator iterator = ((Map) object).entrySet().iterator();
+            if (iterator.hasNext()) {
+                stringBuffer.append("?");
+                Object element;
+                while (iterator.hasNext()) {
+                    element = iterator.next();
+                    Map.Entry<String, Object> entry = (Map.Entry) element;
+                    if (entry.getValue() != null) {
+                        stringBuffer.append(element).append("&");
+                    }
+                    url = stringBuffer.substring(0, stringBuffer.length() - 1);
+                }
+            }
+        }
+        return restTemplate.getForObject(url, ScriptData.class).getData();
+    }
+
     public String debug(JmeterRunRequestDTO runRequest) {
         try {
-            if (runRequest == null ||
-                    (MapUtils.isNotEmpty(runRequest.getExtendedParameters()) && !runRequest.getExtendedParameters().containsKey(ExtendedParameter.JMX))) {
-                return "执行文件为空，无法执行！";
-            }
             if (MapUtils.isEmpty(runRequest.getExtendedParameters())) {
                 runRequest.setExtendedParameters(Map.of(LoggerUtil.DEBUG, true));
             } else {
                 runRequest.getExtendedParameters().put(LoggerUtil.DEBUG, true);
             }
-            InputStream inputSource = getStrToStream(runRequest.getExtendedParameters().get(ExtendedParameter.JMX).toString());
+            Map<String, String> params = new HashMap<>();
+            params.put("reportId", runRequest.getReportId());
+            params.put("testId", runRequest.getTestId());
+            String script = this.getForObject(URLParserUtil.getScriptURL(runRequest.getPlatformUrl()), params);
+            InputStream inputSource = getStrToStream(script);
             runRequest.setHashTree(JMeterService.getHashTree(SaveService.loadElement(inputSource)));
-            runRequest.getExtendedParameters().remove(ExtendedParameter.JMX);
             runRequest.setDebug(true);
             List<BodyFile> files = new ArrayList<>();
             FileUtils.getFiles(runRequest.getHashTree(), files);

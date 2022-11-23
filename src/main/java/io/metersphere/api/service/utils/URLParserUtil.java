@@ -25,4 +25,7 @@ public class URLParserUtil {
         return StringUtils.join(getHost(platformURL), "/api/jmeter/download/files");
     }
 
+    public static String getScriptURL(String platformURL) throws MalformedURLException {
+        return StringUtils.join(getHost(platformURL), "/api/jmeter/get-script");
+    }
 }
