@@ -11,6 +11,7 @@ import io.metersphere.api.jmeter.utils.URLParserUtil;
 import io.metersphere.api.service.utils.BodyFile;
 import io.metersphere.api.service.utils.BodyFileRequest;
 import io.metersphere.api.service.utils.ZipSpider;
+import io.metersphere.api.vo.ScriptData;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
@@ -22,6 +23,7 @@ import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jorphan.collections.HashTree;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.io.ByteArrayInputStream;
@@ -30,8 +32,7 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class JMeterExecuteService {
@@ -39,6 +40,8 @@ public class JMeterExecuteService {
     private JMeterService jMeterService;
     @Resource
     private ProducerService producerService;
+    @Resource
+    private RestTemplate restTemplate;
 
     public String runStart(JmeterRunRequestDTO runRequest) {
         try {
@@ -143,12 +146,12 @@ public class JMeterExecuteService {
 
     public String debug(JmeterRunRequestDTO runRequest) {
         try {
-            if (runRequest == null || StringUtils.isBlank(runRequest.getJmxScript())) {
-                LoggerUtil.info("执行文件为空，无法执行", runRequest.getReportId());
-                return "执行文件为空，无法执行！";
-            }
             runRequest.getExtendedParameters().put(LoggerUtil.DEBUG, true);
-            InputStream inputSource = getStrToStream(runRequest.getJmxScript());
+            Map<String, String> params = new HashMap<>();
+            params.put("reportId", runRequest.getReportId());
+            params.put("testId", runRequest.getTestId());
+            String script = this.getForObject(URLParserUtil.getScriptURL(runRequest.getPlatformUrl()), params);
+            InputStream inputSource = getStrToStream(script);
             runRequest.setHashTree(JMeterService.getHashTree(SaveService.loadElement(inputSource)));
             runRequest.setDebug(true);
             List<BodyFile> files = new ArrayList<>();
@@ -169,6 +172,26 @@ public class JMeterExecuteService {
             LoggerUtil.error(e);
             return e.getMessage();
         }
+    }
+
+    private String getForObject(String url, Object object) {
+        StringBuffer stringBuffer = new StringBuffer(url);
+        if (object instanceof Map) {
+            Iterator iterator = ((Map) object).entrySet().iterator();
+            if (iterator.hasNext()) {
+                stringBuffer.append("?");
+                Object element;
+                while (iterator.hasNext()) {
+                    element = iterator.next();
+                    Map.Entry<String, Object> entry = (Map.Entry) element;
+                    if (entry.getValue() != null) {
+                        stringBuffer.append(element).append("&");
+                    }
+                    url = stringBuffer.substring(0, stringBuffer.length() - 1);
+                }
+            }
+        }
+        return restTemplate.getForObject(url, ScriptData.class).getData();
     }
 
     @Scheduled(cron = "0 0/5 * * * ?")
