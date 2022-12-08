@@ -5,7 +5,6 @@ import io.metersphere.api.jmeter.JMeterService;
 import io.metersphere.api.jmeter.utils.CommonBeanFactory;
 import io.metersphere.api.jmeter.utils.JMeterThreadUtil;
 import io.metersphere.api.service.ProducerService;
-import io.metersphere.cache.JMeterEngineCache;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.ResultDTO;
 import io.metersphere.utils.LoggerUtil;
@@ -43,9 +42,6 @@ public class SystemExecTask implements Runnable {
                 } else {
                     dto.getArbitraryData().put(ExtendedParameter.TEST_END, true);
                     dto.getArbitraryData().put("TIMEOUT", true);
-                }
-                if (JMeterEngineCache.runningEngine.containsKey(dto.getReportId())) {
-                    JMeterEngineCache.runningEngine.remove(dto.getReportId());
                 }
                 CommonBeanFactory.getBean(ProducerService.class).send(dto, request.getKafkaConfig());
             }

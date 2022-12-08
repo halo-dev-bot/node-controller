@@ -7,7 +7,6 @@ import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.jmeter.utils.FixedCapacityUtil;
 import io.metersphere.api.service.JvmService;
 import io.metersphere.api.service.ProducerService;
-import io.metersphere.cache.JMeterEngineCache;
 import io.metersphere.constants.BackendListenerConstants;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.ResultDTO;
@@ -91,9 +90,6 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
                 FileServer.getFileServer().closeCsv(dto.getReportId());
             }
             PoolExecBlockingQueueUtil.offer(dto.getReportId());
-            if (JMeterEngineCache.runningEngine.containsKey(dto.getReportId())) {
-                JMeterEngineCache.runningEngine.remove(dto.getReportId());
-            }
             queues.clear();
         }
     }

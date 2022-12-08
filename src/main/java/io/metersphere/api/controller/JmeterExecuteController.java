@@ -8,7 +8,6 @@ import io.metersphere.api.service.JvmService;
 import io.metersphere.api.vo.JvmInfo;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.JmeterRunRequestDTO;
-import io.metersphere.jmeter.LocalRunner;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -57,7 +56,7 @@ public class JmeterExecuteController {
 
     @GetMapping("/stop")
     public void stop(@RequestBody List<String> keys) {
-        new LocalRunner().stop(keys);
+        JMeterThreadUtil.stop(keys);
     }
 
     @GetMapping("/log/debug/{enable}")
