@@ -1,7 +1,6 @@
 package io.metersphere.api.service;
 
 import com.alibaba.fastjson.JSON;
-import io.metersphere.api.jmeter.ExtendedParameter;
 import io.metersphere.api.jmeter.JMeterService;
 import io.metersphere.api.jmeter.queue.BlockingQueueUtil;
 import io.metersphere.api.jmeter.queue.PoolExecBlockingQueueUtil;
@@ -197,8 +196,7 @@ public class JmeterExecuteService {
                 BodyFileRequest request = new BodyFileRequest(runRequest.getReportId(), files);
                 File bodyFile = ZipSpider.downloadFile(uri, request, FileUtils.BODY_FILE_DIR);
                 if (bodyFile != null) {
-                    runRequest.getExtendedParameters().put(ExtendedParameter.JMX_FILES, files);
-                    ZipSpider.unzip(bodyFile.getPath(), FileUtils.BODY_FILE_DIR);
+                    ZipSpider.unzip(bodyFile.getPath(), "");
                     FileUtils.deleteFile(bodyFile.getPath());
                 }
             }

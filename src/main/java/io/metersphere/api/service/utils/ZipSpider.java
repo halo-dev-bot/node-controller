@@ -4,17 +4,12 @@ import com.alibaba.fastjson.JSON;
 import io.metersphere.utils.LoggerUtil;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.http.Consts;
-import org.apache.jmeter.config.CSVDataSet;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
-import org.apache.jmeter.protocol.http.util.HTTPFileArg;
-import org.apache.jorphan.collections.HashTree;
 
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -68,20 +63,20 @@ public class ZipSpider {
     //解压本地文件至目的文件路径
     public static void unzip(String fromFile, String toFile) {
         try (ZipInputStream zin = new ZipInputStream(new FileInputStream(fromFile)); BufferedInputStream bin = new BufferedInputStream(zin);) {
-            String Parent = toFile;
+            String parent = toFile;
             ZipEntry entry;
             while ((entry = zin.getNextEntry()) != null && !entry.isDirectory()) {
-                File fout = new File(Parent, entry.getName());
-                if (!fout.exists()) {
-                    (new File(fout.getParent())).mkdirs();
+                File file = new File(parent, entry.getName());
+                if (!file.exists()) {
+                    (new File(file.getParent())).mkdirs();
                 }
-                try (FileOutputStream out = new FileOutputStream(fout);
+                try (FileOutputStream out = new FileOutputStream(file);
                      BufferedOutputStream bout = new BufferedOutputStream(out);) {
                     int b;
                     while ((b = bin.read()) != -1) {
                         bout.write(b);
                     }
-                    LoggerUtil.info(fout + "解压成功");
+                    LoggerUtil.info(file + "解压成功");
                 } catch (Exception e) {
                     LoggerUtil.error(e);
                 }
@@ -90,34 +85,6 @@ public class ZipSpider {
             LoggerUtil.error(e);
         } catch (IOException e) {
             LoggerUtil.error(e);
-        }
-    }
-
-    public static void getFiles(HashTree tree, List<BodyFile> files) {
-        for (Object key : tree.keySet()) {
-            HashTree node = tree.get(key);
-            if (key instanceof HTTPSamplerProxy) {
-                HTTPSamplerProxy source = (HTTPSamplerProxy) key;
-                if (source != null && source.getHTTPFiles().length > 0) {
-                    for (HTTPFileArg arg : source.getHTTPFiles()) {
-                        BodyFile file = new BodyFile();
-                        file.setId(arg.getParamName());
-                        file.setName(arg.getPath());
-                        files.add(file);
-                    }
-                }
-            } else if (key instanceof CSVDataSet) {
-                CSVDataSet source = (CSVDataSet) key;
-                if (source != null && source.getFilename() != null) {
-                    BodyFile file = new BodyFile();
-                    file.setId(source.getFilename());
-                    file.setName(source.getFilename());
-                    files.add(file);
-                }
-            }
-            if (node != null) {
-                getFiles(node, files);
-            }
         }
     }
 
