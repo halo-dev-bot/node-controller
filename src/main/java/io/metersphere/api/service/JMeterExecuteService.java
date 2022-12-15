@@ -162,8 +162,7 @@ public class JMeterExecuteService {
                 BodyFileRequest request = new BodyFileRequest(runRequest.getReportId(), files);
                 File bodyFile = ZipSpider.downloadFile(uri, request, FileUtils.BODY_FILE_DIR);
                 if (bodyFile != null) {
-                    runRequest.getExtendedParameters().put(ExtendedParameter.JMX_FILES, files);
-                    ZipSpider.unzip(bodyFile.getPath(), FileUtils.BODY_FILE_DIR);
+                    ZipSpider.unzip(bodyFile.getPath(), "");
                     FileUtils.deleteFile(bodyFile.getPath());
                 }
             }

@@ -4,7 +4,6 @@ import io.metersphere.api.jmeter.queue.ExecThreadPoolExecutor;
 import io.metersphere.api.jmeter.utils.FixedCapacityUtil;
 import io.metersphere.api.jmeter.utils.JMeterProperties;
 import io.metersphere.api.jmeter.utils.MSException;
-import io.metersphere.api.service.utils.BodyFile;
 import io.metersphere.constants.BackendListenerConstants;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.JmeterRunRequestDTO;
@@ -25,7 +24,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.File;
 import java.lang.reflect.Field;
-import java.util.List;
 
 @Service
 public class JMeterService {
@@ -114,9 +112,6 @@ public class JMeterService {
         resultCollector.setProperty(TestElement.TEST_CLASS, MsDebugListener.class.getName());
         resultCollector.setProperty(TestElement.GUI_CLASS, SaveService.aliasToClass("ViewResultsFullVisualizer"));
         resultCollector.setEnabled(true);
-        if (request.getExtendedParameters().containsKey(ExtendedParameter.JMX_FILES)) {
-            resultCollector.setFiles((List<BodyFile>) request.getExtendedParameters().get(ExtendedParameter.JMX_FILES));
-        }
         resultCollector.setClearLog(true);
         if ((request.getExtendedParameters().containsKey(ExtendedParameter.SAVE_RESULT)
                 && Boolean.valueOf(request.getExtendedParameters().get(ExtendedParameter.SAVE_RESULT).toString()))) {

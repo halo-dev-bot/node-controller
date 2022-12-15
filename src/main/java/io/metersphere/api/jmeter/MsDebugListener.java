@@ -20,9 +20,11 @@ package io.metersphere.api.jmeter;
 import io.metersphere.api.jmeter.dto.MsgDTO;
 import io.metersphere.api.jmeter.dto.RequestResultExpandDTO;
 import io.metersphere.api.jmeter.queue.PoolExecBlockingQueueUtil;
-import io.metersphere.api.jmeter.utils.*;
+import io.metersphere.api.jmeter.utils.CommonBeanFactory;
+import io.metersphere.api.jmeter.utils.FixedCapacityUtil;
+import io.metersphere.api.jmeter.utils.ResponseUtil;
+import io.metersphere.api.jmeter.utils.ResultParseUtil;
 import io.metersphere.api.service.ProducerService;
-import io.metersphere.api.service.utils.BodyFile;
 import io.metersphere.dto.RequestResult;
 import io.metersphere.jmeter.JMeterBase;
 import io.metersphere.utils.JMeterVars;
@@ -37,7 +39,6 @@ import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.threads.JMeterVariables;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,7 +55,6 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
     private String testId;
     private String reportId;
     private Map<String, Object> kafkaConfig;
-    private List<BodyFile> files;
     private boolean clearLog;
 
     public String getTestId() {
@@ -79,10 +79,6 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
 
     public void setKafkaConfig(Map<String, Object> kafkaConfig) {
         this.kafkaConfig = kafkaConfig;
-    }
-
-    public void setFiles(List<BodyFile> files) {
-        this.files = files;
     }
 
     @Override
@@ -128,11 +124,6 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
         LoggerUtil.debug("send. " + this.getName());
         producerService.sendDebug(this.reportId, dto, kafkaConfig);
         PoolExecBlockingQueueUtil.offer(this.getName());
-        if (CollectionUtils.isNotEmpty(files)) {
-            files.forEach(item -> {
-                FileUtils.deleteDir(FileUtils.BODY_FILE_DIR + "/" + item.getId());
-            });
-        }
     }
 
     @Override
