@@ -17,7 +17,7 @@ public class JMeterRunContext {
 
     public Map<String, String> getProjectUrls() {
         if (MapUtils.isEmpty(projectUrls)) {
-            return new HashMap<>();
+            projectUrls = new HashMap<>();
         }
         return projectUrls;
     }
@@ -40,7 +40,7 @@ public class JMeterRunContext {
 
     public static JMeterRunContext getContext() {
         if (context == null) {
-            return new JMeterRunContext();
+            context = new JMeterRunContext();
         }
         return context;
     }
