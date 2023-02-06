@@ -28,8 +28,4 @@ public class URLParserUtil {
     public static String getScriptURL(String platformURL) throws MalformedURLException {
         return StringUtils.join(getHost(platformURL), "/api/jmeter/get-script");
     }
-
-    public static String getPluginListURL(String platformURL) throws MalformedURLException {
-        return StringUtils.join(getHost(platformURL), "/api/jmeter/download/plugin/jar/list");
-    }
 }

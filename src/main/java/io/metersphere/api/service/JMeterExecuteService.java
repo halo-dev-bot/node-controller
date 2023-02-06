@@ -17,21 +17,16 @@ import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.save.SaveService;
 import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jorphan.collections.HashTree;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
 
 @Service
@@ -57,12 +52,7 @@ public class JMeterExecuteService {
             String jarUrl = URLParserUtil.getJarURL(runRequest.getPlatformUrl());
             LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
             MsDriverManager.downloadJar(runRequest, jarUrl);
-            if (StringUtils.isEmpty(JMeterRunContext.getContext().getPlugUrl())
-                    && StringUtils.isEmpty(JMeterRunContext.getContext().getUrl())) {
-                JMeterRunContext.getContext().setUrl(URLParserUtil.getPluginListURL(runRequest.getPlatformUrl()));
-                JMeterRunContext.getContext().setPlugUrl(URLParserUtil.getPluginURL(runRequest.getPlatformUrl()));
-                downloadPluginJarService.downloadPlugin(runRequest);
-            }
+            downloadPluginJarService.downloadPlugin(runRequest);
             JMeterRunContext.getContext().setEnable(runRequest.isEnable());
             LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl(), runRequest.getReportId());
             if (runRequest.getHashTree() != null) {
@@ -98,47 +88,6 @@ public class JMeterExecuteService {
             LoggerUtil.error("处理脚本异常" + runRequest.getReportId(), e);
         }
         return "SUCCESS";
-    }
-
-    private static File[] listJars(File dir) {
-        if (dir.isDirectory()) {
-            return dir.listFiles((f, name) -> {
-                if (name.endsWith(".jar")) {// $NON-NLS-1$
-                    File jar = new File(f, name);
-                    return jar.isFile() && jar.canRead();
-                }
-                return false;
-            });
-        }
-        return new File[0];
-    }
-
-    private void loadPlugJar(String jarPath) {
-        File file = new File(jarPath);
-        if (file.isDirectory() && !jarPath.endsWith("/")) {// $NON-NLS-1$
-            file = new File(jarPath + "/");// $NON-NLS-1$
-        }
-
-        File[] jars = listJars(file);
-        for (File jarFile : jars) {
-            try {
-                ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-                try {
-                    // 从URLClassLoader类中获取类所在文件夹的方法，jar也可以认为是一个文件夹
-                    Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-                    method.setAccessible(true);
-                    // 获取系统类加载器
-                    method.invoke(classLoader, jarFile.toURI().toURL());
-                } catch (Exception e) {
-                    Method method = classLoader.getClass()
-                            .getDeclaredMethod("appendToClassPathForInstrumentation", String.class);
-                    method.setAccessible(true);
-                    method.invoke(classLoader, jarFile.getPath());
-                }
-            } catch (Exception e) {
-                LoggerUtil.error(e);
-            }
-        }
     }
 
     public String debug(JmeterRunRequestDTO runRequest) {
@@ -188,19 +137,6 @@ public class JMeterExecuteService {
             }
         }
         return restTemplate.getForObject(url, ScriptData.class).getData();
-    }
-
-    @Scheduled(cron = "0 0/5 * * * ?")
-    public void execute() {
-        if (JMeterRunContext.getContext().isEnable() && MapUtils.isNotEmpty(JMeterRunContext.getContext().getProjectUrls())) {
-            MsDriverManager.downloadJar(JMeterRunContext.getContext().getProjectUrls());
-            if (StringUtils.isNotBlank(JMeterRunContext.getContext().getPlugUrl())
-                    && StringUtils.isNotBlank(JMeterRunContext.getContext().getUrl())) {
-                JmeterRunRequestDTO runRequest = new JmeterRunRequestDTO();
-                runRequest.setReportId("定时同步");
-                downloadPluginJarService.downloadPlugin(runRequest);
-            }
-        }
     }
 
     private static InputStream getStrToStream(String sInputString) {

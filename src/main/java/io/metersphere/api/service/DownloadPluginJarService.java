@@ -1,18 +1,17 @@
 package io.metersphere.api.service;
 
 import io.metersphere.api.jmeter.utils.FileUtils;
+import io.metersphere.api.jmeter.utils.URLParserUtil;
 import io.metersphere.api.service.utils.ZipSpider;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.PluginConfigDTO;
 import io.metersphere.dto.PluginDTO;
-import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -27,8 +26,6 @@ import java.util.stream.Collectors;
 public class DownloadPluginJarService {
 
     @Resource
-    private RestTemplate restTemplate;
-    @Resource
     private MinIOConfigService minIOConfigService;
 
     public void downloadPlugin(JmeterRunRequestDTO runRequest) {
@@ -37,12 +34,10 @@ public class DownloadPluginJarService {
         try {
             //获取本地已存在的jar信息
             List<String> nodeFiles = FileUtils.getFileNames(FileUtils.JAR_PLUG_FILE_DIR);
-            String url = JMeterRunContext.getContext().getUrl();
             //获取所有插件信息
-            Map forObject = restTemplate.getForObject(url, Map.class);
-            PluginConfigDTO pluginDTO = JsonUtils.parseObject(JsonUtils.toJSONString(forObject.get("data")), PluginConfigDTO.class);
-            Map<String, Object> minioConfig = pluginDTO.getConfig();
-            List<PluginDTO> pluginList = pluginDTO.getPluginDTOS();
+            PluginConfigDTO pluginConfigDTO = runRequest.getPluginConfigDTO();
+            Map<String, Object> minioConfig = pluginConfigDTO.getConfig();
+            List<PluginDTO> pluginList = pluginConfigDTO.getPluginDTOS();
             //获取主服务插件jar信息
             List<String> dbJars = pluginList
                     .stream()
@@ -72,7 +67,7 @@ public class DownloadPluginJarService {
             });
             //兼容历史数据
             if (CollectionUtils.isNotEmpty(jarPaths)) {
-                String plugJarUrl = JMeterRunContext.getContext().getPlugUrl();
+                String plugJarUrl = URLParserUtil.getPluginURL(runRequest.getPlatformUrl());
                 LoggerUtil.info("下载插件jar:", plugJarUrl);
                 File plugFile = ZipSpider.downloadJarHistory(plugJarUrl, jarPaths, FileUtils.JAR_PLUG_FILE_DIR);
                 if (plugFile != null) {
