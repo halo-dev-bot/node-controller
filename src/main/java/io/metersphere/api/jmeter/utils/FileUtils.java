@@ -22,7 +22,7 @@ public class FileUtils {
     public static final String IS_REF = "isRef";
     public static final String FILE_ID = "fileId";
     public static final String FILENAME = "filename";
-    public static final String BODY_PLUGIN_FILE_DIR= "/opt/metersphere/data/body/plugin/";
+    public static final String BODY_PLUGIN_FILE_DIR = "/opt/metersphere/data/body/plugin/";
 
     public static void createFiles(MultipartFile[] bodyFiles, String path) {
         if (bodyFiles != null && bodyFiles.length > 0) {
@@ -120,17 +120,18 @@ public class FileUtils {
             }
         }
     }
+
     public static List<String> getFileNames(String path) {
         File f = new File(path);
         if (!f.exists()) {
-            MSException.throwException("文件夹不存在");
+            f.mkdirs();
         }
         List<String> fileNames = new ArrayList<>();
         File fa[] = f.listFiles();
         for (int i = 0; i < fa.length; i++) {
             File fs = fa[i];
             if (fs.isFile()) {
-                fileNames.add(StringUtils.join(FileUtils.BODY_PLUGIN_FILE_DIR,fs.getName()));
+                fileNames.add(StringUtils.join(FileUtils.BODY_PLUGIN_FILE_DIR, fs.getName()));
             }
         }
         return fileNames;
