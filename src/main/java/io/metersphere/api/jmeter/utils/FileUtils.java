@@ -22,6 +22,8 @@ public class FileUtils {
     public static final String IS_REF = "isRef";
     public static final String FILE_ID = "fileId";
     public static final String FILENAME = "filename";
+
+    public static final String FILE_PATH = "File.path";
     public static final String BODY_PLUGIN_FILE_DIR = "/opt/metersphere/data/body/plugin/";
 
     public static void createFiles(MultipartFile[] bodyFiles, String path) {
