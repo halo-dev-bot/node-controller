@@ -49,9 +49,6 @@ public class ZipSpider {
 
     /**
      * 信任所有
-     *
-     * @param connection
-     * @return
      */
     private static SSLSocketFactory trustAllHosts(HttpsURLConnection connection) {
         SSLSocketFactory oldFactory = connection.getSSLSocketFactory();
@@ -69,10 +66,10 @@ public class ZipSpider {
     //解压本地文件至目的文件路径
     public static void unzip(String fromFile, String toFile) {
         try (ZipInputStream zin = new ZipInputStream(new FileInputStream(fromFile)); BufferedInputStream bin = new BufferedInputStream(zin);) {
-            String Parent = toFile;
+            String parent = toFile;
             ZipEntry entry;
             while ((entry = zin.getNextEntry()) != null && !entry.isDirectory()) {
-                File fout = new File(Parent, entry.getName());
+                File fout = new File(parent, entry.getName());
                 if (!fout.exists()) {
                     (new File(fout.getParent())).mkdirs();
                 }

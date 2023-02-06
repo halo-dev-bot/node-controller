@@ -1,15 +1,18 @@
 package io.metersphere.api.service;
 
+import io.metersphere.api.jmeter.utils.CommonBeanFactory;
 import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.jmeter.utils.URLParserUtil;
+import io.metersphere.api.repository.MinIORepositoryImpl;
 import io.metersphere.api.service.utils.ZipSpider;
+import io.metersphere.dto.AttachmentBodyFile;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.PluginConfigDTO;
 import io.metersphere.dto.PluginInfoDTO;
 import io.metersphere.utils.LoggerUtil;
+import io.metersphere.utils.TemporaryFileUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -19,47 +22,60 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class DownloadPluginJarService {
 
     @Resource
-    private MinIOConfigService minIOConfigService;
+    private MinIORepositoryImpl minIOConfigService;
+
+    private TemporaryFileUtil temporaryFileUtil;
 
     public void downloadPlugin(JmeterRunRequestDTO runRequest) {
+        if (temporaryFileUtil == null) {
+            temporaryFileUtil = CommonBeanFactory.getBean(TemporaryFileUtil.class);
+        }
         LoggerUtil.info("开始同步插件JAR：", runRequest.getReportId());
+        //Minio 初始化
+        minIOConfigService.initMinioClient(runRequest.getPluginConfigDTO().getConfig());
+
+        if (CollectionUtils.isEmpty(runRequest.getPluginConfigDTO().getPluginDTOS())) {
+            return;
+        }
         List<String> jarPluginIds = new ArrayList<>();
         try {
             //获取本地已存在的jar信息
             List<String> nodeFiles = FileUtils.getFileNames(FileUtils.JAR_PLUG_FILE_DIR);
             //获取所有插件信息
             PluginConfigDTO pluginConfigDTO = runRequest.getPluginConfigDTO();
-            Map<String, Object> minioConfig = pluginConfigDTO.getConfig();
+
             List<PluginInfoDTO> pluginList = pluginConfigDTO.getPluginDTOS();
             //获取主服务插件jar信息
             List<String> dbJars = pluginList
                     .stream()
                     .map(PluginInfoDTO::getSourcePath)
-                    .collect(Collectors.toList());
+                    .toList();
             if (CollectionUtils.isNotEmpty(nodeFiles)) {
                 //node文件和主服务文件的差集，删除无用jar包
                 List<String> expiredJar = nodeFiles
                         .stream().filter(plugin -> !dbJars.contains(plugin)).collect(Collectors.toList());
                 if (CollectionUtils.isNotEmpty(expiredJar)) {
-                    expiredJar.stream().forEach(expired -> {
+                    expiredJar.forEach(expired -> {
                         FileUtils.deleteFile(StringUtils.join(FileUtils.JAR_PLUG_FILE_DIR, File.separator, StringUtils.substringAfter(expired, FileUtils.BODY_PLUGIN_FILE_DIR)));
                     });
                 }
             }
+
             //需要从MinIO或者主服务工程获取的jar (优先从MinIO下载)
             pluginList = pluginList.stream().filter(plugin -> !nodeFiles.contains(plugin.getSourcePath())).collect(Collectors.toList());
-            pluginList.stream().forEach(plugin -> {
+            pluginList.forEach(plugin -> {
                 try {
-                    byte[] file = minIOConfigService.getFile(minioConfig, plugin.getPluginId());
-                    if (ArrayUtils.isNotEmpty(file)) {
-                        FileUtils.createFile(StringUtils.join(FileUtils.JAR_PLUG_FILE_DIR, File.separator, StringUtils.substringAfter(plugin.getSourcePath(), FileUtils.BODY_PLUGIN_FILE_DIR)), file);
+                    AttachmentBodyFile fileRequest = new AttachmentBodyFile();
+                    fileRequest.setRemotePath(StringUtils.join(FileUtils.BODY_FILE_DIR, "/plugin", plugin.getPluginId(), File.separator, plugin.getPluginId()));
+                    File file = minIOConfigService.getFile(fileRequest);
+                    if (file != null && file.exists()) {
+                        FileUtils.createFile(StringUtils.join(FileUtils.JAR_PLUG_FILE_DIR, File.separator, StringUtils.substringAfter(plugin.getSourcePath(), FileUtils.BODY_PLUGIN_FILE_DIR)), temporaryFileUtil.fileToByte(file));
                     }
                 } catch (Exception e) {
                     jarPluginIds.add(plugin.getPluginId());

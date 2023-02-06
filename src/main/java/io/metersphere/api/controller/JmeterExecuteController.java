@@ -24,9 +24,8 @@ public class JmeterExecuteController {
 
     @PostMapping(value = "/api/start")
     public String apiStartRun(@RequestBody JmeterRunRequestDTO runRequest) {
-        if (StringUtils.equals(runRequest.getReportType(), RunModeConstants.SET_REPORT.toString())) {
-            return jmeterExecuteService.runStart(runRequest);
-        } else if (BlockingQueueUtil.add(runRequest.getReportId())) {
+         if ((StringUtils.equals(runRequest.getReportType(), RunModeConstants.SET_REPORT.toString()))
+         || (BlockingQueueUtil.add(runRequest.getReportId()))) {
             return jmeterExecuteService.runStart(runRequest);
         }
         return "当前报告 " + runRequest.getReportId() + " 正在执行中";

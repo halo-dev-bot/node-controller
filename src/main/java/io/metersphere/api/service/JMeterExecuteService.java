@@ -8,15 +8,13 @@ import io.metersphere.api.jmeter.queue.PoolExecBlockingQueueUtil;
 import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.jmeter.utils.MSException;
 import io.metersphere.api.jmeter.utils.URLParserUtil;
-import io.metersphere.api.service.utils.BodyFile;
-import io.metersphere.api.service.utils.BodyFileRequest;
+import io.metersphere.api.service.utils.JmxAttachmentFileUtil;
 import io.metersphere.api.service.utils.ZipSpider;
 import io.metersphere.api.vo.ScriptData;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
 import jakarta.annotation.Resource;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.save.SaveService;
 import org.apache.jmeter.testelement.TestPlan;
@@ -27,7 +25,9 @@ import org.springframework.web.client.RestTemplate;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 @Service
 public class JMeterExecuteService {
@@ -37,6 +37,8 @@ public class JMeterExecuteService {
     private ProducerService producerService;
     @Resource
     private RestTemplate restTemplate;
+    @Resource
+    private JmxAttachmentFileUtil jmxAttachmentFileUtil;
     @Resource
     private DownloadPluginJarService downloadPluginJarService;
 
@@ -68,6 +70,10 @@ public class JMeterExecuteService {
                 LoggerUtil.info("下载执行脚本完成：" + jmxFile.getName(), runRequest.getReportId());
                 // 生成执行脚本
                 HashTree testPlan = SaveService.loadTree(jmxFile);
+
+                //检查是否需要附件进行下载，并替换JMX里的文件路径
+                jmxAttachmentFileUtil.parseJmxAttachmentFile(testPlan, runRequest.getReportId(), runRequest.getPlatformUrl());
+
                 TestPlan test = (TestPlan) testPlan.getArray()[0];
                 test.setProperty(ExtendedParameter.JAR_PATH, JsonUtils.toJSONString(MsDriverManager.loadJar(runRequest)));
                 // 开始执行
@@ -100,18 +106,9 @@ public class JMeterExecuteService {
             InputStream inputSource = getStrToStream(script);
             runRequest.setHashTree(JMeterService.getHashTree(SaveService.loadElement(inputSource)));
             runRequest.setDebug(true);
-            List<BodyFile> files = new ArrayList<>();
-            FileUtils.getFiles(runRequest.getHashTree(), files);
-            if (CollectionUtils.isNotEmpty(files)) {
-                LoggerUtil.info("获取到附件文件", JsonUtils.toJSONString(files));
-                String uri = URLParserUtil.getDownFileURL(runRequest.getPlatformUrl());
-                BodyFileRequest request = new BodyFileRequest(runRequest.getReportId(), files);
-                File bodyFile = ZipSpider.downloadFile(uri, request, FileUtils.BODY_FILE_DIR);
-                if (bodyFile != null) {
-                    ZipSpider.unzip(bodyFile.getPath(), "");
-                    FileUtils.deleteFile(bodyFile.getPath());
-                }
-            }
+
+            //检查是否需要附件进行下载，并替换JMX里的文件路径
+            jmxAttachmentFileUtil.parseJmxAttachmentFile(runRequest.getHashTree(), runRequest.getReportId(), runRequest.getPlatformUrl());
             return this.runStart(runRequest);
         } catch (Exception e) {
             LoggerUtil.error(e);
