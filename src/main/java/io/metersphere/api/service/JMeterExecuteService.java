@@ -15,6 +15,7 @@ import io.metersphere.api.vo.ScriptData;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
+import jakarta.annotation.Resource;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +26,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import jakarta.annotation.Resource;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -42,6 +42,9 @@ public class JMeterExecuteService {
     private ProducerService producerService;
     @Resource
     private RestTemplate restTemplate;
+    @Resource
+    private DownloadPluginJarService downloadPluginJarService;
+
 
     public String runStart(JmeterRunRequestDTO runRequest) {
         try {
@@ -52,21 +55,15 @@ public class JMeterExecuteService {
             }
             // 生成附件/JAR文件
             String jarUrl = URLParserUtil.getJarURL(runRequest.getPlatformUrl());
-            String plugJarUrl = URLParserUtil.getPluginURL(runRequest.getPlatformUrl());
             LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
             MsDriverManager.downloadJar(runRequest, jarUrl);
-
-            if (StringUtils.isEmpty(JMeterRunContext.getContext().getPlugUrl())) {
-                LoggerUtil.info("开始同步插件JAR：" + plugJarUrl, runRequest.getReportId());
-                File plugFile = ZipSpider.downloadFile(plugJarUrl, FileUtils.JAR_PLUG_FILE_DIR);
-                if (plugFile != null) {
-                    ZipSpider.unzip(plugFile.getPath(), FileUtils.JAR_PLUG_FILE_DIR);
-                    this.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
-                }
+            if (StringUtils.isEmpty(JMeterRunContext.getContext().getPlugUrl())
+                    && StringUtils.isEmpty(JMeterRunContext.getContext().getUrl())) {
+                JMeterRunContext.getContext().setUrl(URLParserUtil.getPluginListURL(runRequest.getPlatformUrl()));
+                JMeterRunContext.getContext().setPlugUrl(URLParserUtil.getPluginURL(runRequest.getPlatformUrl()));
+                downloadPluginJarService.downloadPlugin(runRequest);
             }
-            JMeterRunContext.getContext().setPlugUrl(plugJarUrl);
             JMeterRunContext.getContext().setEnable(runRequest.isEnable());
-
             LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl(), runRequest.getReportId());
             if (runRequest.getHashTree() != null) {
                 TestPlan test = (TestPlan) runRequest.getHashTree().getArray()[0];
@@ -197,14 +194,11 @@ public class JMeterExecuteService {
     public void execute() {
         if (JMeterRunContext.getContext().isEnable() && MapUtils.isNotEmpty(JMeterRunContext.getContext().getProjectUrls())) {
             MsDriverManager.downloadJar(JMeterRunContext.getContext().getProjectUrls());
-            // 清理历史jar
-            FileUtils.deletePath(FileUtils.JAR_PLUG_FILE_DIR);
-            LoggerUtil.info("开始同步插件JAR：" + JMeterRunContext.getContext().getPlugUrl());
-            File plugFile = ZipSpider.downloadFile(JMeterRunContext.getContext().getPlugUrl(), FileUtils.JAR_PLUG_FILE_DIR);
-            if (plugFile != null) {
-                ZipSpider.unzip(plugFile.getPath(), FileUtils.JAR_PLUG_FILE_DIR);
-                FileUtils.deleteFile(plugFile.getPath());
-                this.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
+            if (StringUtils.isNotBlank(JMeterRunContext.getContext().getPlugUrl())
+                    && StringUtils.isNotBlank(JMeterRunContext.getContext().getUrl())) {
+                JmeterRunRequestDTO runRequest = new JmeterRunRequestDTO();
+                runRequest.setReportId("定时同步");
+                downloadPluginJarService.downloadPlugin(runRequest);
             }
         }
     }

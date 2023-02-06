@@ -194,6 +194,89 @@ public class ZipSpider {
         return null;
     }
 
+    public static File downloadJarHistory(String urlPath, List<String> request, String downloadDir) {
+        OutputStream out = null;
+        BufferedInputStream bin = null;
+        HttpURLConnection httpURLConnection = null;
+        try {
+            URL url = new URL(urlPath);
+            URLConnection urlConnection = url.openConnection();
+            boolean useHttps = urlPath.startsWith("https");
+            if (useHttps) {
+                LoggerUtil.info("进入HTTPS协议处理方法");
+                HttpsURLConnection https = (HttpsURLConnection) urlConnection;
+                trustAllHosts(https);
+                https.setHostnameVerifier(DO_NOT_VERIFY);
+            }
+            httpURLConnection = (HttpURLConnection) urlConnection;
+            httpURLConnection.setRequestMethod(HttpMethod.POST.name());
+            httpURLConnection.setDoOutput(true);
+            httpURLConnection.setDoInput(true);
+            httpURLConnection.setUseCaches(false);//POST请求不能使用缓存（POST不能被缓存）
+            httpURLConnection.setRequestProperty("Connection", "Keep-Alive");
+            httpURLConnection.setInstanceFollowRedirects(true);//设置只作用于当前的实例
+            httpURLConnection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            httpURLConnection.setConnectTimeout(20 * 1000);//设置连接主机超时（单位：毫秒）
+            httpURLConnection.setReadTimeout(20 * 1000);//设置从主机读取数据超时（单位：毫秒）
+            httpURLConnection.connect();
+
+            OutputStream outputStream = httpURLConnection.getOutputStream();
+            byte[] t = JsonUtils.toJSONString(request).getBytes(Consts.UTF_8);
+            outputStream.write(t);
+            outputStream.flush();
+            outputStream.close();
+
+            bin = new BufferedInputStream(httpURLConnection.getInputStream());
+            String fileName = httpURLConnection.getHeaderField("Content-Disposition");
+            if (StringUtils.isEmpty(fileName)) {
+                LoggerUtil.info(urlPath + " 下载的文件名称为空", fileName);
+                fileName = "";
+            } else {
+                fileName = URLDecoder.decode(fileName.substring(fileName.indexOf("filename") + 10, fileName.length() - 1), "UTF-8");
+            }
+            String path = StringUtils.join(downloadDir, File.separatorChar, fileName);// 指定存放位置
+            File file = new File(path);
+            // 校验文件夹目录是否存在，不存在就创建一个目录
+            if (file != null && file.getParentFile() != null && !file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+
+            out = new FileOutputStream(file);
+            int size = 0;
+
+            byte[] b = new byte[2048];
+            //把输入流的文件读取到字节数据b中，然后输出到指定目录的文件
+            while ((size = bin.read(b)) != -1) {
+                out.write(b, 0, size);
+            }
+            // 关闭资源
+            bin.close();
+            out.close();
+            LoggerUtil.info("文件下载成功！");
+            return file;
+        } catch (MalformedURLException e) {
+            LoggerUtil.error(e);
+        } catch (IOException e) {
+            LoggerUtil.error(e);
+            LoggerUtil.info("文件下载失败！");
+        } finally {
+            try {
+                if (bin != null) {
+                    bin.close();
+                }
+                if (out != null) {
+                    out.close();
+                }
+                if (httpURLConnection != null) {
+                    httpURLConnection.disconnect();
+                }
+            } catch (Exception e) {
+                LoggerUtil.error(e);
+            }
+        }
+        return null;
+    }
+
     public static File downloadFile(String urlPath, BodyFileRequest request, String downloadDir) {
         File file = null;
         try {

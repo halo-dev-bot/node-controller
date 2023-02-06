@@ -1,6 +1,7 @@
 package io.metersphere.api.jmeter.utils;
 
 import org.apache.commons.lang3.StringUtils;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -13,7 +14,7 @@ public class URLParserUtil {
     }
 
     public static String getPluginURL(String platformURL) throws MalformedURLException {
-        return StringUtils.join(getHost(platformURL), "/api/jmeter/download/plug/jar");
+        return StringUtils.join(getHost(platformURL), "/api/jmeter/download/plugin/jar");
     }
 
     public static String getJarURL(String platformURL) throws MalformedURLException {
@@ -26,5 +27,9 @@ public class URLParserUtil {
 
     public static String getScriptURL(String platformURL) throws MalformedURLException {
         return StringUtils.join(getHost(platformURL), "/api/jmeter/get-script");
+    }
+
+    public static String getPluginListURL(String platformURL) throws MalformedURLException {
+        return StringUtils.join(getHost(platformURL), "/api/jmeter/download/plugin/jar/list");
     }
 }

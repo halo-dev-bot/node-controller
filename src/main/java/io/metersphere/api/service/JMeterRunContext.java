@@ -10,6 +10,7 @@ public class JMeterRunContext {
     private String plugUrl;
     private Map<String, String> projectUrls;
     private static JMeterRunContext context;
+    private String url;
 
     private JMeterRunContext() {
 
@@ -36,6 +37,14 @@ public class JMeterRunContext {
 
     public void setPlugUrl(String plugUrl) {
         this.plugUrl = plugUrl;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public static JMeterRunContext getContext() {
