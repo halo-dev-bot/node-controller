@@ -53,9 +53,9 @@ public class MsDriverManager {
                 if (JMeterRunContext.getContext().isEnable() && JMeterRunContext.getContext().getProjectUrls().containsKey(projectId)) {
                     continue;
                 }
-                jarUrl += "/" + projectId;
-                download(projectId, jarUrl);
-                JMeterRunContext.getContext().getProjectUrls().put(projectId, jarUrl);
+                String url = StringUtils.join(jarUrl, File.separator, projectId);
+                download(projectId, url);
+                JMeterRunContext.getContext().getProjectUrls().put(projectId, url);
             }
         }
     }

@@ -5,7 +5,7 @@ import io.metersphere.api.jmeter.utils.URLParserUtil;
 import io.metersphere.api.service.utils.ZipSpider;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.PluginConfigDTO;
-import io.metersphere.dto.PluginDTO;
+import io.metersphere.dto.PluginInfoDTO;
 import io.metersphere.utils.LoggerUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections.CollectionUtils;
@@ -37,11 +37,11 @@ public class DownloadPluginJarService {
             //获取所有插件信息
             PluginConfigDTO pluginConfigDTO = runRequest.getPluginConfigDTO();
             Map<String, Object> minioConfig = pluginConfigDTO.getConfig();
-            List<PluginDTO> pluginList = pluginConfigDTO.getPluginDTOS();
+            List<PluginInfoDTO> pluginList = pluginConfigDTO.getPluginDTOS();
             //获取主服务插件jar信息
             List<String> dbJars = pluginList
                     .stream()
-                    .map(PluginDTO::getSourcePath)
+                    .map(PluginInfoDTO::getSourcePath)
                     .collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(nodeFiles)) {
                 //node文件和主服务文件的差集，删除无用jar包
