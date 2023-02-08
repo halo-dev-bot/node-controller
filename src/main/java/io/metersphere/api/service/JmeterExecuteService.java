@@ -1,12 +1,10 @@
 package io.metersphere.api.service;
 
-import com.alibaba.fastjson.JSON;
 import io.metersphere.api.jmeter.JMeterService;
 import io.metersphere.api.jmeter.queue.BlockingQueueUtil;
 import io.metersphere.api.jmeter.queue.PoolExecBlockingQueueUtil;
 import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.jmeter.utils.MSException;
-import io.metersphere.api.service.utils.BodyFile;
 import io.metersphere.api.service.utils.BodyFileRequest;
 import io.metersphere.api.service.utils.URLParserUtil;
 import io.metersphere.api.service.utils.ZipSpider;
@@ -14,7 +12,6 @@ import io.metersphere.api.vo.ScriptData;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.NewDriver;
 import org.apache.jmeter.save.SaveService;
@@ -31,7 +28,9 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 @Service
 public class JmeterExecuteService {
@@ -188,17 +187,13 @@ public class JmeterExecuteService {
             InputStream inputSource = getStrToStream(script);
             runRequest.setHashTree(JMeterService.getHashTree(SaveService.loadElement(inputSource)));
             runRequest.setDebug(true);
-            List<BodyFile> files = new ArrayList<>();
-            FileUtils.getFiles(runRequest.getHashTree(), files);
-            if (CollectionUtils.isNotEmpty(files)) {
-                LoggerUtil.info("获取到附件文件", JSON.toJSONString(files));
-                String uri = URLParserUtil.getDownFileURL(runRequest.getPlatformUrl());
-                BodyFileRequest request = new BodyFileRequest(runRequest.getReportId(), files);
-                File bodyFile = ZipSpider.downloadFile(uri, request, FileUtils.BODY_FILE_DIR);
-                if (bodyFile != null) {
-                    ZipSpider.unzip(bodyFile.getPath(), "");
-                    FileUtils.deleteFile(bodyFile.getPath());
-                }
+            // 获取附件
+            String uri = URLParserUtil.getDownFileURL(runRequest.getPlatformUrl());
+            BodyFileRequest request = new BodyFileRequest(runRequest.getReportId(), runRequest.getTestId());
+            File bodyFile = ZipSpider.downloadFile(uri, request, FileUtils.BODY_FILE_DIR);
+            if (bodyFile != null) {
+                ZipSpider.unzip(bodyFile.getPath(), "");
+                FileUtils.deleteFile(bodyFile.getPath());
             }
             return this.runStart(runRequest);
         } catch (Exception e) {
