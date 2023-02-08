@@ -30,7 +30,7 @@ public class DownloadPluginJarService {
 
     public void downloadPlugin(JmeterRunRequestDTO runRequest) {
         LoggerUtil.info("开始同步插件JAR：", runRequest.getReportId());
-        List<String> jarPaths = new ArrayList<>();
+        List<String> jarPluginIds = new ArrayList<>();
         try {
             //获取本地已存在的jar信息
             List<String> nodeFiles = FileUtils.getFileNames(FileUtils.JAR_PLUG_FILE_DIR);
@@ -62,14 +62,14 @@ public class DownloadPluginJarService {
                         FileUtils.createFile(StringUtils.join(FileUtils.JAR_PLUG_FILE_DIR, File.separator, StringUtils.substringAfter(plugin.getSourcePath(), FileUtils.BODY_PLUGIN_FILE_DIR)), file);
                     }
                 } catch (Exception e) {
-                    jarPaths.add(plugin.getSourcePath());
+                    jarPluginIds.add(plugin.getPluginId());
                 }
             });
             //兼容历史数据
-            if (CollectionUtils.isNotEmpty(jarPaths)) {
+            if (CollectionUtils.isNotEmpty(jarPluginIds)) {
                 String plugJarUrl = URLParserUtil.getPluginURL(runRequest.getPlatformUrl());
                 LoggerUtil.info("下载插件jar:", plugJarUrl);
-                File plugFile = ZipSpider.downloadJarHistory(plugJarUrl, jarPaths, FileUtils.JAR_PLUG_FILE_DIR);
+                File plugFile = ZipSpider.downloadJarHistory(plugJarUrl, jarPluginIds, FileUtils.JAR_PLUG_FILE_DIR);
                 if (plugFile != null) {
                     ZipSpider.unzip(plugFile.getPath(), FileUtils.JAR_PLUG_FILE_DIR);
                     FileUtils.deleteFile(plugFile.getPath());
