@@ -63,7 +63,7 @@ public class JmxAttachmentFileUtil {
         //检查Local类型的文件在本地是否存在
         if (CollectionUtils.isNotEmpty(bodyFileList)) {
             bodyFileList.forEach(bodyFile -> {
-                String filePath = this.deleteBodyPath(bodyFile.getFilePath());
+                String filePath = this.substringBodyPath(bodyFile.getFilePath());
                 File file = temporaryFileUtil.getFile(null, 0, filePath);
                 if (file == null) {
                     if (StringUtils.equalsAny(bodyFile.getFileStorage(), StorageConstants.MINIO.name(), StorageConstants.GIT.name())) {
@@ -78,7 +78,7 @@ public class JmxAttachmentFileUtil {
         //获取minio、git文件
         FileCenter.getFilePath(downloadFromRepository);
 
-        //  Metersphere下载
+        //  API-TEST下载
         if (CollectionUtils.isNotEmpty(downloadFromApiServer)) {
             try {
                 String uri = URLParserUtil.getDownFileURL(platformUrl);
@@ -115,7 +115,7 @@ public class JmxAttachmentFileUtil {
         }
     }
 
-    private String deleteBodyPath(String filePath) {
+    private String substringBodyPath(String filePath) {
         if (StringUtils.startsWith(filePath, FileUtils.BODY_FILE_DIR + "/")) {
             filePath = StringUtils.substring(filePath, FileUtils.BODY_FILE_DIR.length() + 1);
         }
@@ -197,7 +197,7 @@ public class JmxAttachmentFileUtil {
                 file.setFileAttachInfoJson(fileAttachInfo);
             }
 
-            String localPath = null;
+            String localPath;
             if (StringUtils.equalsAny(file.getFileStorage(), StorageConstants.GIT.name(), StorageConstants.MINIO.name())) {
                 localPath = temporaryFileUtil.generateFilePath(
                         file.getProjectId(),
@@ -205,7 +205,11 @@ public class JmxAttachmentFileUtil {
                         file.getName()
                 );
             } else {
-                localPath = temporaryFileUtil.generateFilePath(null, 0, this.deleteBodyPath(file.getFilePath()));
+                localPath = temporaryFileUtil.generateFilePath(null, 0, this.substringBodyPath(file.getFilePath()));
+                //判断文本地件是否存在。如果存在则返回null。 文件库文件的本地校验在下载之前判断
+                if (this.isFileExists(null, 0, this.substringBodyPath(file.getFilePath()))) {
+                    file = null;
+                }
             }
 
             testElement.setProperty(FileUtils.FILE_PATH, localPath);
@@ -214,5 +218,10 @@ public class JmxAttachmentFileUtil {
             }
         }
         return file;
+    }
+
+    private boolean isFileExists(String folder, long updateTime, String fileName) {
+        File localFile = temporaryFileUtil.getFile(folder, updateTime, fileName);
+        return localFile != null;
     }
 }
