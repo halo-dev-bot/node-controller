@@ -46,4 +46,24 @@ public class FileCenter {
         }
         return returnList;
     }
+
+    public static List<AttachmentBodyFile> getFilePath(List<AttachmentBodyFile> downLoadFileList) {
+        List<AttachmentBodyFile> returnList = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(downLoadFileList)) {
+            List<AttachmentBodyFile> minIODownloadFiles = new ArrayList<>();
+            List<AttachmentBodyFile> gitDownloadFiles = new ArrayList<>();
+            downLoadFileList.forEach(attachmentBodyFile -> {
+                if (StringUtils.equals(StorageConstants.MINIO.name(), attachmentBodyFile.getFileStorage())) {
+                    minIODownloadFiles.add(attachmentBodyFile);
+                } else if (StringUtils.equals(StorageConstants.GIT.name(), attachmentBodyFile.getFileStorage())) {
+                    gitDownloadFiles.add(attachmentBodyFile);
+                } else {
+                    returnList.add(attachmentBodyFile);
+                }
+            });
+            returnList.addAll(Objects.requireNonNull(getRepository(StorageConstants.MINIO.name())).getFilePath(minIODownloadFiles));
+            returnList.addAll(Objects.requireNonNull(getRepository(StorageConstants.GIT.name())).getFilePath(gitDownloadFiles));
+        }
+        return returnList;
+    }
 }
