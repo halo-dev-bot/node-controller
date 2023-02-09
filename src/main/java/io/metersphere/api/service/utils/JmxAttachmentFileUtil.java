@@ -57,8 +57,8 @@ public class JmxAttachmentFileUtil {
      * 2 对于local（主工程硬盘）上面的，连接主工程下载并记录到执行文件夹内
      */
     private void getAttachmentFile(List<AttachmentBodyFile> bodyFileList, String reportId, String platformUrl) {
-        List<AttachmentBodyFile> metersphereDownLoadFiles = new ArrayList<>();
-        List<AttachmentBodyFile> repositoryDownloadList = new ArrayList<>();
+        List<AttachmentBodyFile> downloadFromApiServer = new ArrayList<>();
+        List<AttachmentBodyFile> downloadFromRepository = new ArrayList<>();
 
         //检查Local类型的文件在本地是否存在
         if (CollectionUtils.isNotEmpty(bodyFileList)) {
@@ -67,26 +67,30 @@ public class JmxAttachmentFileUtil {
                 File file = temporaryFileUtil.getFile(null, 0, filePath);
                 if (file == null) {
                     if (StringUtils.equalsAny(bodyFile.getFileStorage(), StorageConstants.MINIO.name(), StorageConstants.GIT.name())) {
-                        repositoryDownloadList.add(bodyFile);
+                        downloadFromRepository.add(bodyFile);
                     } else {
-                        metersphereDownLoadFiles.add(bodyFile);
+                        downloadFromApiServer.add(bodyFile);
                     }
                 }
             });
         }
 
         //获取minio、git文件
-        FileCenter.batchDownLoadFileInList(repositoryDownloadList);
+        FileCenter.getFilePath(downloadFromRepository);
 
         //  Metersphere下载
-        if (CollectionUtils.isNotEmpty(metersphereDownLoadFiles)) {
+        if (CollectionUtils.isNotEmpty(downloadFromApiServer)) {
             try {
                 String uri = URLParserUtil.getDownFileURL(platformUrl);
                 List<BodyFile> files = new ArrayList<>();
-                metersphereDownLoadFiles.forEach(attachmentBodyFile -> {
+                downloadFromApiServer.forEach(attachmentBodyFile -> {
                     BodyFile bodyFile = new BodyFile();
                     bodyFile.setRefResourceId(attachmentBodyFile.getFileMetadataId());
-                    bodyFile.setName(attachmentBodyFile.getFilePath());
+                    if (StringUtils.isNotEmpty(attachmentBodyFile.getFilePath())) {
+                        bodyFile.setName(attachmentBodyFile.getFilePath());
+                    } else {
+                        bodyFile.setName(attachmentBodyFile.getName());
+                    }
                     files.add(bodyFile);
                 });
                 BodyFileRequest request = new BodyFileRequest(reportId, files);
@@ -99,7 +103,7 @@ public class JmxAttachmentFileUtil {
                     FileUtils.deleteFile(bodyFile.getPath());
                 }
             } catch (Exception e) {
-                LoggerUtil.error("连接Metersphere下载附件失败!");
+                LoggerUtil.error("连接API-TEST下载附件失败!");
             }
         }
     }
@@ -107,7 +111,7 @@ public class JmxAttachmentFileUtil {
     private void mkDir(String folderPath) {
         File file = new File(folderPath);
         if (!file.exists() || !file.isDirectory()) {
-            file.mkdir();
+            file.mkdirs();
         }
     }
 
