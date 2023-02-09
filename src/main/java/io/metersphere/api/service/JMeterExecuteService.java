@@ -53,7 +53,7 @@ public class JMeterExecuteService {
             // 生成附件/JAR文件
             String jarUrl = URLParserUtil.getJarURL(runRequest.getPlatformUrl());
             LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
-            MsDriverManager.downloadJar(runRequest, jarUrl);
+            MsDriverManager.downloadProjectJar(runRequest, jarUrl);
             downloadPluginJarService.downloadPlugin(runRequest);
             JMeterRunContext.getContext().setEnable(runRequest.isEnable());
             LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl(), runRequest.getReportId());

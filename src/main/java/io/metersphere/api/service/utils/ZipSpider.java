@@ -1,13 +1,10 @@
 package io.metersphere.api.service.utils;
 
+import io.metersphere.dto.ProjectJarConfig;
 import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Consts;
-import org.apache.jmeter.config.CSVDataSet;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
-import org.apache.jmeter.protocol.http.util.HTTPFileArg;
-import org.apache.jorphan.collections.HashTree;
 import org.springframework.http.HttpMethod;
 
 import javax.net.ssl.*;
@@ -16,6 +13,7 @@ import java.net.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -88,34 +86,6 @@ public class ZipSpider {
             LoggerUtil.error(e);
         } catch (IOException e) {
             LoggerUtil.error(e);
-        }
-    }
-
-    public static void getFiles(HashTree tree, List<BodyFile> files) {
-        for (Object key : tree.keySet()) {
-            HashTree node = tree.get(key);
-            if (key instanceof HTTPSamplerProxy) {
-                HTTPSamplerProxy source = (HTTPSamplerProxy) key;
-                if (source != null && source.getHTTPFiles().length > 0) {
-                    for (HTTPFileArg arg : source.getHTTPFiles()) {
-                        BodyFile file = new BodyFile();
-                        file.setId(arg.getParamName());
-                        file.setName(arg.getPath());
-                        files.add(file);
-                    }
-                }
-            } else if (key instanceof CSVDataSet) {
-                CSVDataSet source = (CSVDataSet) key;
-                if (source != null && source.getFilename() != null) {
-                    BodyFile file = new BodyFile();
-                    file.setId(source.getFilename());
-                    file.setName(source.getFilename());
-                    files.add(file);
-                }
-            }
-            if (node != null) {
-                getFiles(node, files);
-            }
         }
     }
 
@@ -192,6 +162,20 @@ public class ZipSpider {
     }
 
     public static File downloadJarHistory(String urlPath, List<String> request, String downloadDir) {
+        byte[] t = JsonUtils.toJSONString(request).getBytes(Consts.UTF_8);
+        File file = getFile(urlPath, downloadDir, t);
+        if (file != null) return file;
+        return null;
+    }
+
+    public static File downloadJarDb(String urlPath, Map<String, List<ProjectJarConfig>> request, String downloadDir) {
+        byte[] t = JsonUtils.toJSONString(request).getBytes(Consts.UTF_8);
+        File file = getFile(urlPath, downloadDir, t);
+        if (file != null) return file;
+        return null;
+    }
+
+    private static File getFile(String urlPath, String downloadDir, byte[] t) {
         OutputStream out = null;
         BufferedInputStream bin = null;
         HttpURLConnection httpURLConnection = null;
@@ -218,7 +202,6 @@ public class ZipSpider {
             httpURLConnection.connect();
 
             OutputStream outputStream = httpURLConnection.getOutputStream();
-            byte[] t = JsonUtils.toJSONString(request).getBytes(Consts.UTF_8);
             outputStream.write(t);
             outputStream.flush();
             outputStream.close();
