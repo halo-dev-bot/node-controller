@@ -25,6 +25,7 @@ import io.metersphere.api.jmeter.utils.FixedCapacityUtil;
 import io.metersphere.api.jmeter.utils.ResponseUtil;
 import io.metersphere.api.jmeter.utils.ResultParseUtil;
 import io.metersphere.api.service.ProducerService;
+import io.metersphere.api.service.utils.JmxAttachmentFileUtil;
 import io.metersphere.dto.RequestResult;
 import io.metersphere.jmeter.JMeterBase;
 import io.metersphere.utils.JMeterVars;
@@ -52,6 +53,7 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
     private static final String RUNNING_DEBUG_SAMPLER_NAME = "RunningDebugSampler";
     public static final String TEST_END = "MS_TEST_END";
     private ProducerService producerService;
+    private JmxAttachmentFileUtil jmxAttachmentFileUtil;
     private String testId;
     private String reportId;
     private Map<String, Object> kafkaConfig;
@@ -82,9 +84,10 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
         this.kafkaConfig = kafkaConfig;
     }
 
-    public void setRunMode (String runMode) {
+    public void setRunMode(String runMode) {
         this.runMode = runMode;
     }
+
     @Override
     public Object clone() {
         MsDebugListener clone = (MsDebugListener) super.clone();
@@ -129,11 +132,13 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
         LoggerUtil.debug("send. " + this.getName());
         producerService.sendDebug(this.reportId, dto, kafkaConfig);
         PoolExecBlockingQueueUtil.offer(this.getName());
+        jmxAttachmentFileUtil.deleteTmpFiles(this.reportId);
     }
 
     @Override
     public void testStarted(String host) {
         producerService = CommonBeanFactory.getBean(ProducerService.class);
+        jmxAttachmentFileUtil = CommonBeanFactory.getBean(JmxAttachmentFileUtil.class);
         LoggerUtil.debug("TestStarted " + this.getName());
     }
 
