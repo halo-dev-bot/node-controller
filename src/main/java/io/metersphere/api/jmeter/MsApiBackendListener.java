@@ -7,6 +7,7 @@ import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.jmeter.utils.FixedCapacityUtil;
 import io.metersphere.api.service.JvmService;
 import io.metersphere.api.service.ProducerService;
+import io.metersphere.api.service.utils.JmxAttachmentFileUtil;
 import io.metersphere.constants.BackendListenerConstants;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.ResultDTO;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 public class MsApiBackendListener extends AbstractBackendListenerClient implements Serializable {
     private List<SampleResult> queues;
+    private JmxAttachmentFileUtil jmxAttachmentFileUtil;
     // KAFKA 配置信息
     private Map<String, Object> producerProps;
     private ResultDTO dto;
@@ -36,6 +38,7 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
     @Override
     public void setupTest(BackendListenerContext context) throws Exception {
         queues = new LinkedList<>();
+        jmxAttachmentFileUtil = CommonBeanFactory.getBean(JmxAttachmentFileUtil.class);
         this.setParam(context);
         super.setupTest(context);
     }
@@ -51,6 +54,7 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
 
     @Override
     public void teardownTest(BackendListenerContext context) {
+        String executeReportId = null;
         try {
             super.teardownTest(context);
             PoolExecBlockingQueueUtil.offer(dto.getReportId());
@@ -66,10 +70,12 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
                 LoggerUtil.info("重试结果处理结束", dto.getReportId());
             }
             String reportId = dto.getReportId();
+            executeReportId = reportId;
+
             if (StringUtils.equals(dto.getReportType(), RunModeConstants.SET_REPORT.toString())) {
                 reportId = StringUtils.join(dto.getReportId(), "_", dto.getTestId());
             }
-            dto.setConsole(FixedCapacityUtil.getJmeterLogger(reportId,true));
+            dto.setConsole(FixedCapacityUtil.getJmeterLogger(reportId, true));
             if (dto.getArbitraryData() == null || dto.getArbitraryData().isEmpty()) {
                 dto.setArbitraryData(new HashMap<String, Object>() {{
                     this.put(ExtendedParameter.TEST_END, true);
@@ -85,6 +91,9 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
         } catch (Exception e) {
             LoggerUtil.error("结果处理异常", dto.getReportId(), e);
         } finally {
+            //删除执行过程中的文件和附件
+            jmxAttachmentFileUtil.deleteTmpFiles(executeReportId);
+
             if (FileServer.getFileServer() != null) {
                 LoggerUtil.info("进入监听，开始关闭CSV", dto.getReportId());
                 FileServer.getFileServer().closeCsv(dto.getReportId());

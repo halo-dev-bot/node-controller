@@ -12,6 +12,7 @@ import io.metersphere.utils.TemporaryFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.config.CSVDataSet;
+import org.apache.jmeter.config.KeystoreConfig;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPFileArg;
 import org.apache.jmeter.testelement.TestElement;
@@ -63,13 +64,23 @@ public class JmxAttachmentFileUtil {
         //检查Local类型的文件在本地是否存在
         if (CollectionUtils.isNotEmpty(bodyFileList)) {
             bodyFileList.forEach(bodyFile -> {
-                String filePath = this.substringBodyPath(bodyFile.getFilePath());
-                File file = temporaryFileUtil.getFile(null, 0, filePath);
-                if (file == null) {
-                    if (StringUtils.equalsAny(bodyFile.getFileStorage(), StorageConstants.MINIO.name(), StorageConstants.GIT.name())) {
+                File executeFile;
+                if (StringUtils.equalsAny(bodyFile.getFileStorage(), StorageConstants.MINIO.name(), StorageConstants.GIT.name())) {
+                    executeFile = temporaryFileUtil.getFile(bodyFile.getProjectId(), bodyFile.getFileUpdateTime(), bodyFile.getName());
+                    if (executeFile == null) {
+                        LoggerUtil.info("本次执行[" + reportId + "]需要下载的[" + bodyFile.getFileStorage() + "]文件【" + bodyFile.getFileUpdateTime() + "_" + bodyFile.getName() + "】在当前机器节点未找到！");
                         downloadFromRepository.add(bodyFile);
                     } else {
+                        LoggerUtil.info("本次执行[" + reportId + "]需要下载的[" + bodyFile.getFileStorage() + "]文件【" + bodyFile.getName() + "】在当前机器节点已找到，无需下载。");
+                    }
+                } else {
+                    String filePath = this.substringBodyPath(bodyFile.getFilePath());
+                    executeFile = temporaryFileUtil.getFile(null, 0, filePath);
+                    if (executeFile == null) {
+                        LoggerUtil.info("本次执行[" + reportId + "]需要下载的[Local]文件【" + filePath + "】在当前机器节点未找到！");
                         downloadFromApiServer.add(bodyFile);
+                    } else {
+                        LoggerUtil.info("本次执行[" + reportId + "]需要下载的[Local]文件【" + filePath + "】在当前机器节点已找到，无需下载。");
                     }
                 }
             });
@@ -77,6 +88,7 @@ public class JmxAttachmentFileUtil {
 
         //获取minio、git文件
         FileCenter.getFilePath(downloadFromRepository);
+        LoggerUtil.info("本次执行[" + reportId + "]在文件库中需要下载[" + downloadFromRepository.size() + "]个文件，已下载完毕。");
 
         //  API-TEST下载
         if (CollectionUtils.isNotEmpty(downloadFromApiServer)) {
@@ -102,6 +114,7 @@ public class JmxAttachmentFileUtil {
                     ZipSpider.unzip(bodyFile.getPath(), downloadPath);
                     FileUtils.deleteFile(bodyFile.getPath());
                 }
+                LoggerUtil.info("本次执行[" + reportId + "]连接主工程Metersphere需要下载[" + downloadFromApiServer.size() + "]个文件，已下载完毕。");
             } catch (Exception e) {
                 LoggerUtil.error("连接API-TEST下载附件失败!");
             }
@@ -132,12 +145,38 @@ public class JmxAttachmentFileUtil {
                 dealWithHttp(key, files);
             } else if (key instanceof CSVDataSet) {
                 dealWithCsv(key, files);
+            } else if (key instanceof KeystoreConfig) {
+                dealWithKeystoreConfig(key, files);
             }
+
             if (node != null) {
                 initAttachmentBodyFile(node, files);
             }
         }
     }
+
+    public void dealWithKeystoreConfig(Object tree, List<AttachmentBodyFile> files) {
+
+        if (tree != null) {
+            KeystoreConfig source = (KeystoreConfig) tree;
+            AttachmentBodyFile file = new AttachmentBodyFile();
+            if (StringUtils.isNotBlank(source.getPropertyAsString(FileUtils.KEYSTORE_FILE_PATH))) {
+                String filePath = source.getPropertyAsString(FileUtils.KEYSTORE_FILE_PATH);
+                file.setFilePath(filePath);
+            }
+
+            String localPath = temporaryFileUtil.generateFilePath(null, 0, this.substringBodyPath(file.getFilePath()));
+            //判断文本地件是否存在。如果存在则返回null。 文件库文件的本地校验在下载之前判断
+            if (this.isFileExists(null, 0, this.substringBodyPath(file.getFilePath()))) {
+                file = null;
+            }
+            source.setProperty(FileUtils.KEYSTORE_FILE_PATH, localPath);
+            if (file != null) {
+                files.add(file);
+            }
+        }
+    }
+
 
     private void dealWithHttp(Object key, List<AttachmentBodyFile> files) {
         if (key == null) {
@@ -223,5 +262,23 @@ public class JmxAttachmentFileUtil {
     private boolean isFileExists(String folder, long updateTime, String fileName) {
         File localFile = temporaryFileUtil.getFile(folder, updateTime, fileName);
         return localFile != null;
+    }
+
+    public void deleteTmpFiles(String reportId) {
+        if (StringUtils.isNotEmpty(reportId)) {
+            String executeTmpFolder = StringUtils.join(
+                    temporaryFileUtil.generateFileDir(null),
+                    File.separator,
+                    "tmp",
+                    File.separator,
+                    reportId
+            );
+            try {
+                FileUtils.deleteDir(executeTmpFolder);
+            } catch (Exception e) {
+                LoggerUtil.error("删除[" + reportId + "]执行中产生的临时文件失败!", e);
+            }
+
+        }
     }
 }
