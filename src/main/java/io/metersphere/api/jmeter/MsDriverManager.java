@@ -1,6 +1,5 @@
 package io.metersphere.api.jmeter;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.metersphere.api.enums.StorageConstants;
 import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.jmeter.utils.MSException;
@@ -12,7 +11,6 @@ import io.metersphere.dto.AttachmentBodyFile;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.ProjectJarConfig;
 import io.metersphere.utils.JarConfigUtils;
-import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -25,12 +23,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MsDriverManager {
-    private static final String PROJECT_JAR_MAP = "PROJECT_JAR_MAP";
 
     public static void downloadProjectJar(JmeterRunRequestDTO runRequest) {
-        if (runRequest.getExtendedParameters() != null && runRequest.getExtendedParameters().containsKey(PROJECT_JAR_MAP)) {
-            Map<String, List<ProjectJarConfig>> map = JsonUtils.parseObject(runRequest.getExtendedParameters().get(PROJECT_JAR_MAP).toString(), new TypeReference<Map<String, List<ProjectJarConfig>>>() {
-            });
+        if (MapUtils.isNotEmpty(runRequest.getCustomJarInfo())) {
+            Map<String, List<ProjectJarConfig>> map = runRequest.getCustomJarInfo();
             //获取项目id
             List<String> projectIds = map.keySet().stream().collect(Collectors.toList());
             //获取需要下载的jar包
@@ -40,20 +36,22 @@ public class MsDriverManager {
                 Map<String, List<ProjectJarConfig>> gitMap = new HashMap<>();
                 Map<String, List<ProjectJarConfig>> minIOMap = new HashMap<>();
                 jarConfigs.forEach((key, value) -> {
-                    //历史数据
-                    List<ProjectJarConfig> hisList = value.stream().distinct().filter(s -> s.isHasFile()).collect(Collectors.toList());
-                    if (CollectionUtils.isNotEmpty(hisList)) {
-                        historyDataMap.put(key, hisList);
-                    }
-                    //Git下载
-                    List<ProjectJarConfig> gitLists = value.stream().distinct().filter(s -> StringUtils.equals(StorageConstants.GIT.name(), s.getStorage())).collect(Collectors.toList());
-                    if (CollectionUtils.isNotEmpty(gitLists)) {
-                        gitMap.put(key, gitLists);
-                    }
-                    //MinIO下载
-                    List<ProjectJarConfig> minIOList = value.stream().distinct().filter(s -> StringUtils.equals(StorageConstants.MINIO.name(), s.getStorage())).collect(Collectors.toList());
-                    if (CollectionUtils.isNotEmpty(minIOList)) {
-                        minIOMap.put(key, minIOList);
+                    if (CollectionUtils.isNotEmpty(value)) {
+                        //历史数据
+                        List<ProjectJarConfig> hisList = value.stream().distinct().filter(s -> s.isHasFile()).collect(Collectors.toList());
+                        if (CollectionUtils.isNotEmpty(hisList)) {
+                            historyDataMap.put(key, hisList);
+                        }
+                        //Git下载
+                        List<ProjectJarConfig> gitLists = value.stream().distinct().filter(s -> StringUtils.equals(StorageConstants.GIT.name(), s.getStorage())).collect(Collectors.toList());
+                        if (CollectionUtils.isNotEmpty(gitLists)) {
+                            gitMap.put(key, gitLists);
+                        }
+                        //MinIO下载
+                        List<ProjectJarConfig> minIOList = value.stream().distinct().filter(s -> StringUtils.equals(StorageConstants.MINIO.name(), s.getStorage())).collect(Collectors.toList());
+                        if (CollectionUtils.isNotEmpty(minIOList)) {
+                            minIOMap.put(key, minIOList);
+                        }
                     }
                 });
                 if (MapUtils.isNotEmpty(historyDataMap)) {
@@ -80,6 +78,7 @@ public class MsDriverManager {
                             try {
                                 AttachmentBodyFile attachmentBodyFile = new AttachmentBodyFile();
                                 attachmentBodyFile.setFileAttachInfoJson(s.getAttachInfo());
+                                LoggerUtil.info("开始下载Git仓库中的Jar包，文件名：" + s.getName());
                                 byte[] gitFiles = gitRepository.getFile(attachmentBodyFile);
                                 FileUtils.createFile(StringUtils.join(FileUtils.PROJECT_JAR_FILE_DIR,
                                         File.separator,
@@ -103,6 +102,7 @@ public class MsDriverManager {
                             try {
                                 String path = StringUtils.join(
                                         key, File.separator, s.getName());
+                                LoggerUtil.info("开始下载MinIO中的Jar包，文件名：" + s.getName() + "，路径：" + path);
                                 byte[] bytes = minIORepository.getFileAsStream(path).readAllBytes();
                                 FileUtils.createFile(StringUtils.join(FileUtils.PROJECT_JAR_FILE_DIR,
                                         File.separator,
