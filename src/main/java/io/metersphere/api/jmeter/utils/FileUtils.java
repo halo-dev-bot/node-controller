@@ -123,7 +123,7 @@ public class FileUtils {
         }
     }
 
-    public static List<String> getFileNames(String path) {
+    public static List<String> getFileNames(String path, String targetPath) {
         File f = new File(path);
         if (!f.exists()) {
             f.mkdirs();
@@ -132,8 +132,8 @@ public class FileUtils {
         File fa[] = f.listFiles();
         for (int i = 0; i < fa.length; i++) {
             File fs = fa[i];
-            if (fs.isFile()) {
-                fileNames.add(StringUtils.join(FileUtils.BODY_PLUGIN_FILE_DIR, fs.getName()));
+            if (fs.exists()) {
+                fileNames.add(StringUtils.join(targetPath, fs.getName()));
             }
         }
         return fileNames;

@@ -24,29 +24,6 @@ public class FileCenter {
         }
     }
 
-    /**
-     * 批量下载文件. 下载成功的文件会存储在对应model的fileBytes字段中。
-     */
-    public static List<AttachmentBodyFile> batchDownLoadFileInList(List<AttachmentBodyFile> downLoadFileList) {
-        List<AttachmentBodyFile> returnList = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(downLoadFileList)) {
-            List<AttachmentBodyFile> minIODownloadFiles = new ArrayList<>();
-            List<AttachmentBodyFile> gitDownloadFiles = new ArrayList<>();
-            downLoadFileList.forEach(attachmentBodyFile -> {
-                if (StringUtils.equals(StorageConstants.MINIO.name(), attachmentBodyFile.getFileStorage())) {
-                    minIODownloadFiles.add(attachmentBodyFile);
-                } else if (StringUtils.equals(StorageConstants.GIT.name(), attachmentBodyFile.getFileStorage())) {
-                    gitDownloadFiles.add(attachmentBodyFile);
-                } else {
-                    returnList.add(attachmentBodyFile);
-                }
-            });
-            returnList.addAll(Objects.requireNonNull(getRepository(StorageConstants.MINIO.name())).getFileBatch(minIODownloadFiles));
-            returnList.addAll(Objects.requireNonNull(getRepository(StorageConstants.GIT.name())).getFileBatch(gitDownloadFiles));
-        }
-        return returnList;
-    }
-
     public static List<AttachmentBodyFile> getFilePath(List<AttachmentBodyFile> downLoadFileList) {
         List<AttachmentBodyFile> returnList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(downLoadFileList)) {

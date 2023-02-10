@@ -46,7 +46,7 @@ public class DownloadPluginJarService {
         List<String> jarPluginIds = new ArrayList<>();
         try {
             //获取本地已存在的jar信息
-            List<String> nodeFiles = FileUtils.getFileNames(FileUtils.JAR_PLUG_FILE_DIR);
+            List<String> nodeFiles = FileUtils.getFileNames(FileUtils.JAR_PLUG_FILE_DIR, FileUtils.BODY_PLUGIN_FILE_DIR);
             //获取所有插件信息
             PluginConfigDTO pluginConfigDTO = runRequest.getPluginConfigDTO();
 

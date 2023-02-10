@@ -84,6 +84,9 @@ public class GitRepositoryImpl implements FileRepository {
                 requestList.forEach(fileRequest -> {
                     if (fileByteMap.get(fileRequest.getFileMetadataId()) != null) {
                         fileRequest.setFileBytes(fileByteMap.get(fileRequest.getFileMetadataId()));
+                        fileRequest.setLocalPath(
+                                temporaryFileUtil.generateFilePath(fileRequest.getProjectId(), fileRequest.getFileUpdateTime(), fileRequest.getName())
+                        );
                     }
                 });
                 list.addAll(requestList);
@@ -182,5 +185,16 @@ public class GitRepositoryImpl implements FileRepository {
             }
         }
         return requestGroupByRepository;
+    }
+
+    public byte[] getFile(AttachmentBodyFile request) throws Exception {
+        byte[] fileBytes = new byte[0];
+        if (request.getFileAttachInfoJson() != null) {
+            RemoteFileAttachInfo gitFileInfo = JsonUtils.parseObject(request.getFileAttachInfoJson(), RemoteFileAttachInfo.class);
+            GitRepositoryUtil repositoryUtils = new GitRepositoryUtil(
+                    gitFileInfo.getRepositoryPath(), gitFileInfo.getUserName(), gitFileInfo.getToken());
+            fileBytes = repositoryUtils.getSingleFile(gitFileInfo.getFilePath(), gitFileInfo.getCommitId());
+        }
+        return fileBytes;
     }
 }

@@ -1,6 +1,5 @@
 package io.metersphere.api.service;
 
-import io.metersphere.api.jmeter.ExtendedParameter;
 import io.metersphere.api.jmeter.JMeterService;
 import io.metersphere.api.jmeter.MsDriverManager;
 import io.metersphere.api.jmeter.queue.BlockingQueueUtil;
@@ -12,12 +11,10 @@ import io.metersphere.api.service.utils.JmxAttachmentFileUtil;
 import io.metersphere.api.service.utils.ZipSpider;
 import io.metersphere.api.vo.ScriptData;
 import io.metersphere.dto.JmeterRunRequestDTO;
-import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.save.SaveService;
-import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jorphan.collections.HashTree;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -50,16 +47,13 @@ public class JMeterExecuteService {
                 LoggerUtil.error("KAFKA配置为空无法执行", runRequest.getReportId());
                 return "KAFKA 初始化失败，请检查配置";
             }
-            // 生成附件/JAR文件
-            String jarUrl = URLParserUtil.getJarURL(runRequest.getPlatformUrl());
-            LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
-            MsDriverManager.downloadJar(runRequest, jarUrl);
+            // 下载系统插件
             downloadPluginJarService.downloadPlugin(runRequest);
+            // 下载项目插件
+            MsDriverManager.downloadProjectJar(runRequest);
             JMeterRunContext.getContext().setEnable(runRequest.isEnable());
             LoggerUtil.info("开始拉取脚本和脚本附件：" + runRequest.getPlatformUrl(), runRequest.getReportId());
             if (runRequest.getHashTree() != null) {
-                TestPlan test = (TestPlan) runRequest.getHashTree().getArray()[0];
-                test.setProperty(ExtendedParameter.JAR_PATH, JsonUtils.toJSONString(MsDriverManager.loadJar(runRequest)));
                 jMeterService.run(runRequest);
                 return "SUCCESS";
             }
@@ -73,9 +67,7 @@ public class JMeterExecuteService {
 
                 //检查是否需要附件进行下载，并替换JMX里的文件路径
                 jmxAttachmentFileUtil.parseJmxAttachmentFile(testPlan, runRequest.getReportId(), runRequest.getPlatformUrl());
-
-                TestPlan test = (TestPlan) testPlan.getArray()[0];
-                test.setProperty(ExtendedParameter.JAR_PATH, JsonUtils.toJSONString(MsDriverManager.loadJar(runRequest)));
+                
                 // 开始执行
                 runRequest.setHashTree(testPlan);
                 LoggerUtil.info("开始加入队列执行", runRequest.getReportId());
