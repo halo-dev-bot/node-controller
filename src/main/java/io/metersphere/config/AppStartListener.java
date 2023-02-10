@@ -1,6 +1,7 @@
 package io.metersphere.config;
 
 import io.metersphere.api.jmeter.JMeterService;
+import io.metersphere.jmeter.ProjectClassLoader;
 import io.metersphere.utils.LoggerUtil;
 import org.python.core.Options;
 import org.python.util.PythonInterpreter;
@@ -25,6 +26,8 @@ public class AppStartListener implements ApplicationListener<ApplicationReadyEve
         System.out.println("================= NODE 应用启动 START =================");
         System.setProperty("jmeter.home", jmeterHome);
         initPythonEnv();
+
+        ProjectClassLoader.initClassLoader();
     }
 
     /**

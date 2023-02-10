@@ -10,6 +10,7 @@ import io.metersphere.api.service.utils.ZipSpider;
 import io.metersphere.dto.AttachmentBodyFile;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.ProjectJarConfig;
+import io.metersphere.jmeter.ProjectClassLoader;
 import io.metersphere.utils.JarConfigUtils;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -17,6 +18,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +37,10 @@ public class MsDriverManager {
                 Map<String, List<ProjectJarConfig>> historyDataMap = new HashMap<>();
                 Map<String, List<ProjectJarConfig>> gitMap = new HashMap<>();
                 Map<String, List<ProjectJarConfig>> minIOMap = new HashMap<>();
+                List<String> loaderProjectIds = new ArrayList<>();
                 jarConfigs.forEach((key, value) -> {
                     if (CollectionUtils.isNotEmpty(value)) {
+                        loaderProjectIds.add(key);
                         //历史数据
                         List<ProjectJarConfig> hisList = value.stream().distinct().filter(s -> s.isHasFile()).collect(Collectors.toList());
                         if (CollectionUtils.isNotEmpty(hisList)) {
@@ -117,6 +121,9 @@ public class MsDriverManager {
                             }
                         });
                     });
+                }
+                if (CollectionUtils.isNotEmpty(loaderProjectIds)) {
+                    ProjectClassLoader.initClassLoader(loaderProjectIds);
                 }
             }
         }
