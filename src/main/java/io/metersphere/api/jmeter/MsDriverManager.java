@@ -14,6 +14,7 @@ import io.metersphere.dto.ProjectJarConfig;
 import io.metersphere.utils.JarConfigUtils;
 import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,25 +41,36 @@ public class MsDriverManager {
                 Map<String, List<ProjectJarConfig>> minIOMap = new HashMap<>();
                 jarConfigs.forEach((key, value) -> {
                     //历史数据
-                    historyDataMap.put(key, value.stream().filter(s -> s.isHasFile()).collect(Collectors.toList()));
-                    //Git下载
-                    gitMap.put(key, value.stream().filter(s -> StringUtils.equals(StorageConstants.GIT.name(), s.getStorage())).collect(Collectors.toList()));
-                    //MinIO下载
-                    minIOMap.put(key, value.stream().filter(s -> StringUtils.equals(StorageConstants.MINIO.name(), s.getStorage())).collect(Collectors.toList()));
-                });
-                try {
-                    // 生成附件/JAR文件
-                    String jarUrl = URLParserUtil.getJarURL(runRequest.getPlatformUrl());
-                    LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
-                    //下载历史jar包
-                    File file = ZipSpider.downloadJarDb(jarUrl, historyDataMap, FileUtils.PROJECT_JAR_FILE_DIR);
-                    if (file != null) {
-                        ZipSpider.unzip(file.getPath(), FileUtils.PROJECT_JAR_FILE_DIR);
-                        FileUtils.deleteFile(file.getPath());
+                    List<ProjectJarConfig> hisList = value.stream().distinct().filter(s -> s.isHasFile()).collect(Collectors.toList());
+                    if (CollectionUtils.isNotEmpty(hisList)) {
+                        historyDataMap.put(key, hisList);
                     }
-                } catch (Exception e) {
-                    LoggerUtil.error(e.getMessage(), e);
-                    MSException.throwException(e.getMessage());
+                    //Git下载
+                    List<ProjectJarConfig> gitLists = value.stream().distinct().filter(s -> StringUtils.equals(StorageConstants.GIT.name(), s.getStorage())).collect(Collectors.toList());
+                    if (CollectionUtils.isNotEmpty(gitLists)) {
+                        gitMap.put(key, gitLists);
+                    }
+                    //MinIO下载
+                    List<ProjectJarConfig> minIOList = value.stream().distinct().filter(s -> StringUtils.equals(StorageConstants.MINIO.name(), s.getStorage())).collect(Collectors.toList());
+                    if (CollectionUtils.isNotEmpty(minIOList)) {
+                        minIOMap.put(key, minIOList);
+                    }
+                });
+                if (MapUtils.isNotEmpty(historyDataMap)) {
+                    try {
+                        // 生成附件/JAR文件
+                        String jarUrl = URLParserUtil.getJarURL(runRequest.getPlatformUrl());
+                        LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
+                        //下载历史jar包
+                        File file = ZipSpider.downloadJarDb(jarUrl, historyDataMap, FileUtils.PROJECT_JAR_FILE_DIR);
+                        if (file != null) {
+                            ZipSpider.unzip(file.getPath(), FileUtils.PROJECT_JAR_FILE_DIR);
+                            FileUtils.deleteFile(file.getPath());
+                        }
+                    } catch (Exception e) {
+                        LoggerUtil.error(e.getMessage(), e);
+                        MSException.throwException(e.getMessage());
+                    }
                 }
                 //下载Git jar包
                 if (MapUtils.isNotEmpty(gitMap)) {
@@ -90,7 +102,6 @@ public class MsDriverManager {
                         value.stream().forEach(s -> {
                             try {
                                 String path = StringUtils.join(
-                                        File.separator,
                                         key, File.separator, s.getName());
                                 byte[] bytes = minIORepository.getFileAsStream(path).readAllBytes();
                                 FileUtils.createFile(StringUtils.join(FileUtils.PROJECT_JAR_FILE_DIR,
