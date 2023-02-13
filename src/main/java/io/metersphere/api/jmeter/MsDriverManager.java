@@ -12,6 +12,7 @@ import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.ProjectJarConfig;
 import io.metersphere.jmeter.ProjectClassLoader;
 import io.metersphere.utils.JarConfigUtils;
+import io.metersphere.utils.LocalPathUtil;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -64,9 +65,9 @@ public class MsDriverManager {
                         String jarUrl = URLParserUtil.getJarURL(runRequest.getPlatformUrl());
                         LoggerUtil.info("开始同步上传的JAR：" + jarUrl);
                         //下载历史jar包
-                        File file = ZipSpider.downloadJarDb(jarUrl, historyDataMap, FileUtils.PROJECT_JAR_FILE_DIR);
+                        File file = ZipSpider.downloadJarDb(jarUrl, historyDataMap, LocalPathUtil.JAR_PATH);
                         if (file != null) {
-                            ZipSpider.unzip(file.getPath(), FileUtils.PROJECT_JAR_FILE_DIR);
+                            ZipSpider.unzip(file.getPath(), LocalPathUtil.JAR_PATH);
                             FileUtils.deleteFile(file.getPath());
                         }
                     } catch (Exception e) {
@@ -84,7 +85,7 @@ public class MsDriverManager {
                                 attachmentBodyFile.setFileAttachInfoJson(s.getAttachInfo());
                                 LoggerUtil.info("开始下载Git仓库中的Jar包，文件名：" + s.getName());
                                 byte[] gitFiles = gitRepository.getFile(attachmentBodyFile);
-                                FileUtils.createFile(StringUtils.join(FileUtils.PROJECT_JAR_FILE_DIR,
+                                FileUtils.createFile(StringUtils.join(LocalPathUtil.JAR_PATH,
                                         File.separator,
                                         key,
                                         File.separator,
@@ -108,7 +109,7 @@ public class MsDriverManager {
                                         key, File.separator, s.getName());
                                 LoggerUtil.info("开始下载MinIO中的Jar包，文件名：" + s.getName() + "，路径：" + path);
                                 byte[] bytes = minIORepository.getFileAsStream(path).readAllBytes();
-                                FileUtils.createFile(StringUtils.join(FileUtils.PROJECT_JAR_FILE_DIR,
+                                FileUtils.createFile(StringUtils.join(LocalPathUtil.JAR_PATH,
                                         File.separator,
                                         key,
                                         File.separator,
