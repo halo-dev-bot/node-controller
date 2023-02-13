@@ -1,8 +1,11 @@
 package io.metersphere.config;
 
 import io.metersphere.api.jmeter.JMeterService;
+import io.metersphere.api.jmeter.utils.FileUtils;
+import io.metersphere.api.service.DownloadPluginJarService;
 import io.metersphere.jmeter.ProjectClassLoader;
 import io.metersphere.utils.LoggerUtil;
+import jakarta.annotation.Resource;
 import org.python.core.Options;
 import org.python.util.PythonInterpreter;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,13 +13,13 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.Resource;
-
 @Component
 public class AppStartListener implements ApplicationListener<ApplicationReadyEvent> {
 
     @Resource
     private JMeterService jMeterService;
+    @Resource
+    private DownloadPluginJarService downloadPluginJarService;
 
     @Value("${jmeter.home}")
     private String jmeterHome;
@@ -24,10 +27,13 @@ public class AppStartListener implements ApplicationListener<ApplicationReadyEve
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         System.out.println("================= NODE 应用启动 START =================");
-        System.setProperty("jmeter.home", jmeterHome);
+        LoggerUtil.info("jmeter.home", jmeterHome);
         initPythonEnv();
 
         ProjectClassLoader.initClassLoader();
+
+        LoggerUtil.info("init plugin", FileUtils.JAR_PLUG_FILE_DIR);
+        downloadPluginJarService.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
     }
 
     /**

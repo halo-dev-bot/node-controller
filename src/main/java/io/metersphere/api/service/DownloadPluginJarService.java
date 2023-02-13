@@ -92,13 +92,15 @@ public class DownloadPluginJarService {
                 }
             }
             //load所有jar
-            this.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
+            if (CollectionUtils.isNotEmpty(pluginList) || CollectionUtils.isNotEmpty(jarPluginIds)) {
+                this.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
+            }
         } catch (Exception e) {
             LoggerUtil.error("node处理插件异常", runRequest.getReportId(), e);
         }
     }
 
-    private void loadPlugJar(String jarPath) {
+    public void loadPlugJar(String jarPath) {
         File file = new File(jarPath);
         if (file.isDirectory() && !jarPath.endsWith("/")) {
             file = new File(jarPath + "/");
