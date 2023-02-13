@@ -9,6 +9,7 @@ import io.metersphere.dto.AttachmentBodyFile;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.PluginConfigDTO;
 import io.metersphere.dto.PluginInfoDTO;
+import io.metersphere.utils.LocalPathUtil;
 import io.metersphere.utils.LoggerUtil;
 import io.metersphere.utils.TemporaryFileUtil;
 import jakarta.annotation.Resource;
@@ -46,7 +47,7 @@ public class DownloadPluginJarService {
         List<String> jarPluginIds = new ArrayList<>();
         try {
             //获取本地已存在的jar信息
-            List<String> nodeFiles = FileUtils.getFileNames(FileUtils.JAR_PLUG_FILE_DIR, FileUtils.BODY_PLUGIN_FILE_DIR);
+            List<String> nodeFiles = FileUtils.getFileNames(LocalPathUtil.PLUGIN_PATH, FileUtils.BODY_PLUGIN_FILE_DIR);
             //获取所有插件信息
             PluginConfigDTO pluginConfigDTO = runRequest.getPluginConfigDTO();
 
@@ -62,7 +63,7 @@ public class DownloadPluginJarService {
                         .stream().filter(plugin -> !dbJars.contains(plugin)).collect(Collectors.toList());
                 if (CollectionUtils.isNotEmpty(expiredJar)) {
                     expiredJar.forEach(expired -> {
-                        FileUtils.deleteFile(StringUtils.join(FileUtils.JAR_PLUG_FILE_DIR, File.separator, StringUtils.substringAfter(expired, FileUtils.BODY_PLUGIN_FILE_DIR)));
+                        FileUtils.deleteFile(StringUtils.join(LocalPathUtil.PLUGIN_PATH, File.separator, StringUtils.substringAfter(expired, FileUtils.BODY_PLUGIN_FILE_DIR)));
                     });
                 }
             }
@@ -72,10 +73,10 @@ public class DownloadPluginJarService {
             pluginList.forEach(plugin -> {
                 try {
                     AttachmentBodyFile fileRequest = new AttachmentBodyFile();
-                    fileRequest.setRemotePath(StringUtils.join(FileUtils.BODY_FILE_DIR, "/plugin", plugin.getPluginId(), File.separator, plugin.getPluginId()));
+                    fileRequest.setRemotePath(StringUtils.join(LocalPathUtil.PLUGIN_PATH, plugin.getPluginId(), File.separator, plugin.getPluginId()));
                     File file = minIOConfigService.getFile(fileRequest);
                     if (file != null && file.exists()) {
-                        FileUtils.createFile(StringUtils.join(FileUtils.JAR_PLUG_FILE_DIR, File.separator, StringUtils.substringAfter(plugin.getSourcePath(), FileUtils.BODY_PLUGIN_FILE_DIR)), temporaryFileUtil.fileToByte(file));
+                        FileUtils.createFile(StringUtils.join(LocalPathUtil.PLUGIN_PATH, File.separator, StringUtils.substringAfter(plugin.getSourcePath(), FileUtils.BODY_PLUGIN_FILE_DIR)), temporaryFileUtil.fileToByte(file));
                     }
                 } catch (Exception e) {
                     jarPluginIds.add(plugin.getPluginId());
@@ -85,15 +86,15 @@ public class DownloadPluginJarService {
             if (CollectionUtils.isNotEmpty(jarPluginIds)) {
                 String plugJarUrl = URLParserUtil.getPluginURL(runRequest.getPlatformUrl());
                 LoggerUtil.info("下载插件jar:", plugJarUrl);
-                File plugFile = ZipSpider.downloadJarHistory(plugJarUrl, jarPluginIds, FileUtils.JAR_PLUG_FILE_DIR);
+                File plugFile = ZipSpider.downloadJarHistory(plugJarUrl, jarPluginIds, LocalPathUtil.PLUGIN_PATH);
                 if (plugFile != null) {
-                    ZipSpider.unzip(plugFile.getPath(), FileUtils.JAR_PLUG_FILE_DIR);
+                    ZipSpider.unzip(plugFile.getPath(), LocalPathUtil.PLUGIN_PATH);
                     FileUtils.deleteFile(plugFile.getPath());
                 }
             }
             //load所有jar
             if (CollectionUtils.isNotEmpty(pluginList) || CollectionUtils.isNotEmpty(jarPluginIds)) {
-                this.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
+                this.loadPlugJar(LocalPathUtil.PLUGIN_PATH);
             }
         } catch (Exception e) {
             LoggerUtil.error("node处理插件异常", runRequest.getReportId(), e);

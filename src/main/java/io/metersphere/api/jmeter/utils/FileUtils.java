@@ -9,7 +9,6 @@ import java.util.List;
 
 public class FileUtils {
     public static final String BODY_FILE_DIR = "/opt/metersphere/data/body";
-    public static final String PROJECT_JAR_FILE_DIR = "/opt/metersphere/data/node/jar";
     public static final String JAR_PLUG_FILE_DIR = "/opt/metersphere/data/node/plug/jar";
     public static final String IS_REF = "isRef";
     public static final String FILE_ID = "fileId";
