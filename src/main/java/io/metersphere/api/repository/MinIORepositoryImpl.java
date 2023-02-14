@@ -45,49 +45,25 @@ public class MinIORepositoryImpl implements FileRepository {
     }
 
     @Override
-    public List<AttachmentBodyFile> getFilePath(List<AttachmentBodyFile> attachmentBodyFileList) {
+    public List<AttachmentBodyFile> downloadFiles(List<AttachmentBodyFile> attachmentBodyFileList) {
         if (temporaryFileUtil == null) {
             temporaryFileUtil = CommonBeanFactory.getBean(TemporaryFileUtil.class);
         }
-        List<AttachmentBodyFile> returnList = new ArrayList<>();
+        List<AttachmentBodyFile> errorList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(attachmentBodyFileList)) {
             attachmentBodyFileList.forEach(attachmentBodyFile -> {
                 try {
                     attachmentBodyFile.setRemotePath(attachmentBodyFile.getProjectId() + "/" + attachmentBodyFile.getName());
                     File file = this.getFile(attachmentBodyFile);
-                    if (file != null) {
-                        returnList.add(attachmentBodyFile);
+                    if (file == null) {
+                        errorList.add(attachmentBodyFile);
                     }
                 } catch (Exception e) {
                     LoggerUtil.error(e);
                 }
             });
         }
-        return returnList;
-    }
-
-
-    @Override
-    public List<AttachmentBodyFile> getFileBatch(List<AttachmentBodyFile> attachmentBodyFileList) {
-        if (temporaryFileUtil == null) {
-            temporaryFileUtil = CommonBeanFactory.getBean(TemporaryFileUtil.class);
-        }
-        List<AttachmentBodyFile> returnList = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(attachmentBodyFileList)) {
-            attachmentBodyFileList.forEach(attachmentBodyFile -> {
-                try {
-                    attachmentBodyFile.setRemotePath(attachmentBodyFile.getProjectId() + "/" + attachmentBodyFile.getName());
-                    File file = this.getFile(attachmentBodyFile);
-                    if (file != null) {
-                        attachmentBodyFile.setFileBytes(temporaryFileUtil.fileToByte(file));
-                        returnList.add(attachmentBodyFile);
-                    }
-                } catch (Exception e) {
-                    LoggerUtil.error(e);
-                }
-            });
-        }
-        return returnList;
+        return errorList;
     }
 
     public void initMinioClient(Map<String, Object> minioConfig) {
