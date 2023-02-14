@@ -41,9 +41,9 @@ public class MsDriverManager {
                     if (CollectionUtils.isNotEmpty(value)) {
                         loaderProjectIds.add(key);
                         //Git下载或历史数据
-                        List<ProjectJarConfig> gitLists = value.stream().distinct().filter(s -> StringUtils.equals(StorageConstants.GIT.name(), s.getStorage()) || s.isHasFile()).collect(Collectors.toList());
-                        if (CollectionUtils.isNotEmpty(gitLists)) {
-                            historyDataMap.put(key, gitLists);
+                        List<ProjectJarConfig> otherRepositoryList = value.stream().distinct().filter(s -> !StringUtils.equals(StorageConstants.MINIO.name(), s.getStorage()) || s.isHasFile()).collect(Collectors.toList());
+                        if (CollectionUtils.isNotEmpty(otherRepositoryList)) {
+                            historyDataMap.put(key, otherRepositoryList);
                         }
                         //MinIO下载
                         List<ProjectJarConfig> minIOList = value.stream().distinct().filter(s -> StringUtils.equals(StorageConstants.MINIO.name(), s.getStorage())).collect(Collectors.toList());

@@ -16,31 +16,24 @@ public class FileCenter {
         if (StringUtils.equals(StorageConstants.MINIO.name(), storage)) {
             LoggerUtil.info("NAS文件处理");
             return CommonBeanFactory.getBean(MinIORepositoryImpl.class);
-        } else if (StringUtils.equals(StorageConstants.GIT.name(), storage)) {
-            LoggerUtil.info("Git文件处理");
-            return new GitRepositoryImpl();
         } else {
             return null;
         }
     }
 
-    public static List<AttachmentBodyFile> getFilePath(List<AttachmentBodyFile> downLoadFileList) {
-        List<AttachmentBodyFile> returnList = new ArrayList<>();
+    public static List<AttachmentBodyFile> downloadFiles(List<AttachmentBodyFile> downLoadFileList) {
+
+        List<AttachmentBodyFile> downloadErrorList = new ArrayList<>();
+
         if (CollectionUtils.isNotEmpty(downLoadFileList)) {
             List<AttachmentBodyFile> minIODownloadFiles = new ArrayList<>();
-            List<AttachmentBodyFile> gitDownloadFiles = new ArrayList<>();
             downLoadFileList.forEach(attachmentBodyFile -> {
                 if (StringUtils.equals(StorageConstants.MINIO.name(), attachmentBodyFile.getFileStorage())) {
                     minIODownloadFiles.add(attachmentBodyFile);
-                } else if (StringUtils.equals(StorageConstants.GIT.name(), attachmentBodyFile.getFileStorage())) {
-                    gitDownloadFiles.add(attachmentBodyFile);
-                } else {
-                    returnList.add(attachmentBodyFile);
                 }
             });
-            returnList.addAll(Objects.requireNonNull(getRepository(StorageConstants.MINIO.name())).getFilePath(minIODownloadFiles));
-            returnList.addAll(Objects.requireNonNull(getRepository(StorageConstants.GIT.name())).getFilePath(gitDownloadFiles));
+            downloadErrorList = Objects.requireNonNull(getRepository(StorageConstants.MINIO.name())).downloadFiles(minIODownloadFiles);
         }
-        return returnList;
+        return downloadErrorList;
     }
 }

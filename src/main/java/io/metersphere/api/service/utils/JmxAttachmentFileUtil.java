@@ -65,11 +65,18 @@ public class JmxAttachmentFileUtil {
         if (CollectionUtils.isNotEmpty(bodyFileList)) {
             bodyFileList.forEach(bodyFile -> {
                 File executeFile;
-                if (StringUtils.equalsAny(bodyFile.getFileStorage(), StorageConstants.MINIO.name(), StorageConstants.GIT.name())) {
+                if (StringUtils.isNotEmpty(bodyFile.getFileStorage()) && !StringUtils.equals(bodyFile.getFileStorage(), StorageConstants.LOCAL.name())) {
                     executeFile = temporaryFileUtil.getFile(bodyFile.getProjectId(), bodyFile.getFileUpdateTime(), bodyFile.getName());
                     if (executeFile == null) {
                         LoggerUtil.info("本次执行[" + reportId + "]需要下载的[" + bodyFile.getFileStorage() + "]文件【" + bodyFile.getFileUpdateTime() + "_" + bodyFile.getName() + "】在当前机器节点未找到！");
-                        downloadFromRepository.add(bodyFile);
+                        //区分MinIO下载还是api-server下载
+                        if (StringUtils.equals(bodyFile.getFileStorage(), StorageConstants.MINIO.name())) {
+                            downloadFromRepository.add(bodyFile);
+                        } else {
+                            downloadFromApiServer.add(bodyFile);
+                        }
+                        //存在未找到的文件，还有一种可能是执行文件夹中存在过期文件。这时候执行一次删除判断。
+                        temporaryFileUtil.deleteOldFile(bodyFile.getProjectId(), bodyFile.getFileUpdateTime(), bodyFile.getName());
                     } else {
                         LoggerUtil.info("本次执行[" + reportId + "]需要下载的[" + bodyFile.getFileStorage() + "]文件【" + bodyFile.getName() + "】在当前机器节点已找到，无需下载。");
                     }
@@ -86,10 +93,12 @@ public class JmxAttachmentFileUtil {
             });
         }
 
-        //获取minio、git文件
-        FileCenter.getFilePath(downloadFromRepository);
+        //获取MinIO文件
+        List<AttachmentBodyFile> downloadErrorList = FileCenter.downloadFiles(downloadFromRepository);
         LoggerUtil.info("本次执行[" + reportId + "]在文件库中需要下载[" + downloadFromRepository.size() + "]个文件，已下载完毕。");
-
+        if (CollectionUtils.isNotEmpty(downloadErrorList)) {
+            downloadFromApiServer.addAll(downloadErrorList);
+        }
         //  API-TEST下载
         if (CollectionUtils.isNotEmpty(downloadFromApiServer)) {
             try {
@@ -98,6 +107,7 @@ public class JmxAttachmentFileUtil {
                 downloadFromApiServer.forEach(attachmentBodyFile -> {
                     BodyFile bodyFile = new BodyFile();
                     bodyFile.setRefResourceId(attachmentBodyFile.getFileMetadataId());
+                    bodyFile.setStorage(attachmentBodyFile.getFileStorage());
                     if (StringUtils.isNotEmpty(attachmentBodyFile.getFilePath())) {
                         bodyFile.setName(attachmentBodyFile.getFilePath());
                     } else {
@@ -106,9 +116,9 @@ public class JmxAttachmentFileUtil {
                     files.add(bodyFile);
                 });
                 BodyFileRequest request = new BodyFileRequest(reportId, files);
-                String downloadPath = temporaryFileUtil.generateFileDir(null);
+                String downloadPath = temporaryFileUtil.fileFolder;
                 this.mkDir(downloadPath);
-                File bodyFile = ZipSpider.downloadFile(uri, request, temporaryFileUtil.generateFileDir(null));
+                File bodyFile = ZipSpider.downloadFile(uri, request, downloadPath);
                 if (bodyFile != null) {
                     //解压文件直接到缓存目录中。
                     ZipSpider.unzip(bodyFile.getPath(), downloadPath);
@@ -231,13 +241,8 @@ public class JmxAttachmentFileUtil {
                 file.setProjectId(testElement.getPropertyAsString(JmxFileMetadataColumns.REF_FILE_PROJECT_ID.name()));
             }
 
-            if (StringUtils.isNotBlank(testElement.getPropertyAsString(JmxFileMetadataColumns.REF_FILE_ATTACH_INFO.name()))) {
-                String fileAttachInfo = testElement.getPropertyAsString(JmxFileMetadataColumns.REF_FILE_ATTACH_INFO.name());
-                file.setFileAttachInfoJson(fileAttachInfo);
-            }
-
             String localPath;
-            if (StringUtils.equalsAny(file.getFileStorage(), StorageConstants.GIT.name(), StorageConstants.MINIO.name())) {
+            if (StringUtils.isNotEmpty(file.getFileStorage()) && !StringUtils.equals(file.getFileStorage(), StorageConstants.LOCAL.name())) {
                 localPath = temporaryFileUtil.generateFilePath(
                         file.getProjectId(),
                         file.getFileUpdateTime(),
@@ -267,7 +272,7 @@ public class JmxAttachmentFileUtil {
     public void deleteTmpFiles(String reportId) {
         if (StringUtils.isNotEmpty(reportId)) {
             String executeTmpFolder = StringUtils.join(
-                    temporaryFileUtil.generateFileDir(null),
+                    temporaryFileUtil.generateFileDir(null, 0),
                     File.separator,
                     "tmp",
                     File.separator,
