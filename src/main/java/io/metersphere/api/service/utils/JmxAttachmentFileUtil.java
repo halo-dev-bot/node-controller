@@ -66,7 +66,7 @@ public class JmxAttachmentFileUtil {
             bodyFileList.forEach(bodyFile -> {
                 File executeFile;
                 if (StringUtils.isNotEmpty(bodyFile.getFileStorage()) && !StringUtils.equals(bodyFile.getFileStorage(), StorageConstants.LOCAL.name())) {
-                    executeFile = temporaryFileUtil.getFile(bodyFile.getProjectId(), bodyFile.getFileUpdateTime(), bodyFile.getName());
+                    executeFile = temporaryFileUtil.getFile(bodyFile.getProjectId(), bodyFile.getFileMetadataId(), bodyFile.getFileUpdateTime(), bodyFile.getName());
                     if (executeFile == null) {
                         LoggerUtil.info("本次执行[" + reportId + "]需要下载的[" + bodyFile.getFileStorage() + "]文件【" + bodyFile.getFileUpdateTime() + "_" + bodyFile.getName() + "】在当前机器节点未找到！");
                         //区分MinIO下载还是api-server下载
@@ -76,13 +76,13 @@ public class JmxAttachmentFileUtil {
                             downloadFromApiServer.add(bodyFile);
                         }
                         //存在未找到的文件，还有一种可能是执行文件夹中存在过期文件。这时候执行一次删除判断。
-                        temporaryFileUtil.deleteOldFile(bodyFile.getProjectId(), bodyFile.getFileUpdateTime(), bodyFile.getName());
+                        temporaryFileUtil.deleteOldFile(bodyFile.getProjectId(), bodyFile.getFileMetadataId(), bodyFile.getFileUpdateTime(), bodyFile.getName());
                     } else {
                         LoggerUtil.info("本次执行[" + reportId + "]需要下载的[" + bodyFile.getFileStorage() + "]文件【" + bodyFile.getName() + "】在当前机器节点已找到，无需下载。");
                     }
                 } else {
                     String filePath = this.substringBodyPath(bodyFile.getFilePath());
-                    executeFile = temporaryFileUtil.getFile(null, 0, filePath);
+                    executeFile = temporaryFileUtil.getFile(null, null, 0, filePath);
                     if (executeFile == null) {
                         LoggerUtil.info("本次执行[" + reportId + "]需要下载的[Local]文件【" + filePath + "】在当前机器节点未找到！");
                         downloadFromApiServer.add(bodyFile);
@@ -175,9 +175,9 @@ public class JmxAttachmentFileUtil {
                 file.setFilePath(filePath);
             }
 
-            String localPath = temporaryFileUtil.generateFilePath(null, 0, this.substringBodyPath(file.getFilePath()));
+            String localPath = temporaryFileUtil.generateFilePath(null, null, 0, this.substringBodyPath(file.getFilePath()));
             //判断文本地件是否存在。如果存在则返回null。 文件库文件的本地校验在下载之前判断
-            if (this.isFileExists(null, 0, this.substringBodyPath(file.getFilePath()))) {
+            if (this.isFileExists(null, null, 0, this.substringBodyPath(file.getFilePath()))) {
                 file = null;
             }
             source.setProperty(FileUtils.KEYSTORE_FILE_PATH, localPath);
@@ -245,18 +245,25 @@ public class JmxAttachmentFileUtil {
             if (StringUtils.isNotEmpty(file.getFileStorage()) && !StringUtils.equals(file.getFileStorage(), StorageConstants.LOCAL.name())) {
                 localPath = temporaryFileUtil.generateFilePath(
                         file.getProjectId(),
+                        file.getFileMetadataId(),
                         file.getFileUpdateTime(),
                         file.getName()
                 );
             } else {
-                localPath = temporaryFileUtil.generateFilePath(null, 0, this.substringBodyPath(file.getFilePath()));
+                String filePath = StringUtils.isBlank(file.getFilePath()) ? file.getName() : file.getFilePath();
+                localPath = temporaryFileUtil.generateFilePath(null, null, 0, this.substringBodyPath(filePath));
                 //判断文本地件是否存在。如果存在则返回null。 文件库文件的本地校验在下载之前判断
-                if (this.isFileExists(null, 0, this.substringBodyPath(file.getFilePath()))) {
+                if (this.isFileExists(null, null, 0, this.substringBodyPath(file.getFilePath()))) {
                     file = null;
                 }
             }
 
-            testElement.setProperty(FileUtils.FILE_PATH, localPath);
+            if (StringUtils.isNotBlank(testElement.getPropertyAsString(FileUtils.FILE_PATH))) {
+                testElement.setProperty(FileUtils.FILE_PATH, localPath);
+            } else {
+                testElement.setProperty(FileUtils.FILENAME, localPath);
+            }
+
             if (testElement instanceof HTTPFileArg) {
                 ((HTTPFileArg) testElement).setPath(localPath);
             }
@@ -264,15 +271,15 @@ public class JmxAttachmentFileUtil {
         return file;
     }
 
-    private boolean isFileExists(String folder, long updateTime, String fileName) {
-        File localFile = temporaryFileUtil.getFile(folder, updateTime, fileName);
+    private boolean isFileExists(String folder, String fileMetadataId, long updateTime, String fileName) {
+        File localFile = temporaryFileUtil.getFile(folder, fileMetadataId, updateTime, fileName);
         return localFile != null;
     }
 
     public void deleteTmpFiles(String reportId) {
         if (StringUtils.isNotEmpty(reportId)) {
             String executeTmpFolder = StringUtils.join(
-                    temporaryFileUtil.generateFileDir(null, 0),
+                    temporaryFileUtil.generateFileDir(null, null, 0),
                     File.separator,
                     "tmp",
                     File.separator,
