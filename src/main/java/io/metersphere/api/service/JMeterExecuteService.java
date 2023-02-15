@@ -74,7 +74,7 @@ public class JMeterExecuteService {
                 // 批量执行时，loadjar在这里加载
                 TestPlan testPlanElement = (TestPlan) testPlan.getArray()[0];
                 JMeterProperty property = testPlanElement.getProperty(JmxFileMetadataColumns.JAR_PATH_CONFIG.name());
-                if (property != null) {
+                if (StringUtils.isNotBlank(property.getStringValue())) {
                     Map<String, List<ProjectJarConfig>> jarsMap = JsonUtils.parseObject(property.getStringValue(), new TypeReference<Map<String, List<ProjectJarConfig>>>() {
                     });
                     runRequest.setCustomJarInfo(jarsMap);
