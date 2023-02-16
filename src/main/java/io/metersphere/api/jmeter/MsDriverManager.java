@@ -1,5 +1,6 @@
 package io.metersphere.api.jmeter;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.metersphere.api.enums.StorageConstants;
 import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.jmeter.utils.MSException;
@@ -8,13 +9,18 @@ import io.metersphere.api.repository.MinIORepositoryImpl;
 import io.metersphere.api.service.utils.ZipSpider;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.dto.ProjectJarConfig;
+import io.metersphere.enums.JmxFileMetadataColumns;
 import io.metersphere.jmeter.ProjectClassLoader;
 import io.metersphere.utils.JarConfigUtils;
+import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LocalPathUtil;
 import io.metersphere.utils.LoggerUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jmeter.testelement.TestPlan;
+import org.apache.jmeter.testelement.property.JMeterProperty;
+import org.apache.jorphan.collections.HashTree;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,7 +40,6 @@ public class MsDriverManager {
             Map<String, List<ProjectJarConfig>> jarConfigs = JarConfigUtils.getJarConfigs(projectIds, map);
             if (MapUtils.isNotEmpty(jarConfigs)) {
                 Map<String, List<ProjectJarConfig>> historyDataMap = new HashMap<>();
-                Map<String, List<ProjectJarConfig>> gitMap = new HashMap<>();
                 Map<String, List<ProjectJarConfig>> minIOMap = new HashMap<>();
                 List<String> loaderProjectIds = new ArrayList<>();
                 jarConfigs.forEach((key, value) -> {
@@ -98,6 +103,19 @@ public class MsDriverManager {
                     ProjectClassLoader.initClassLoader(loaderProjectIds);
                 }
             }
+        }
+    }
+
+    public static void batchLoadJar(JmeterRunRequestDTO runRequest, HashTree testPlan) {
+        // 批量执行时，loadjar在这里加载
+        TestPlan testPlanElement = (TestPlan) testPlan.getArray()[0];
+        JMeterProperty property = testPlanElement.getProperty(JmxFileMetadataColumns.JAR_PATH_CONFIG.name());
+        if (StringUtils.isNotBlank(property.getStringValue())) {
+            Map<String, List<ProjectJarConfig>> jarsMap = JsonUtils.parseObject(property.getStringValue(), new TypeReference<Map<String, List<ProjectJarConfig>>>() {
+            });
+            runRequest.setCustomJarInfo(jarsMap);
+            MsDriverManager.downloadProjectJar(runRequest);
+            testPlanElement.removeProperty(JmxFileMetadataColumns.JAR_PATH_CONFIG.name());
         }
     }
 }
