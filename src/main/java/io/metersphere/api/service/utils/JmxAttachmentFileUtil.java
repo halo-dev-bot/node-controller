@@ -82,7 +82,7 @@ public class JmxAttachmentFileUtil {
                     }
                 } else {
                     String filePath = this.substringBodyPath(bodyFile.getFilePath());
-                    executeFile = temporaryFileUtil.getFile(null, null, 0, filePath);
+                    executeFile = temporaryFileUtil.getLocalFile(filePath);
                     if (executeFile == null) {
                         LoggerUtil.info("本次执行[" + reportId + "]需要下载的[Local]文件【" + filePath + "】在当前机器节点未找到！");
                         downloadFromApiServer.add(bodyFile);
