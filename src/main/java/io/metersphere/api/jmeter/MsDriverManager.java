@@ -43,8 +43,8 @@ public class MsDriverManager {
                 Map<String, List<ProjectJarConfig>> minIOMap = new HashMap<>();
                 List<String> loaderProjectIds = new ArrayList<>();
                 jarConfigs.forEach((key, value) -> {
+                    loaderProjectIds.add(key);
                     if (CollectionUtils.isNotEmpty(value)) {
-                        loaderProjectIds.add(key);
                         //Git下载或历史数据
                         List<ProjectJarConfig> otherRepositoryList = value.stream().distinct().filter(s -> !StringUtils.equals(StorageConstants.MINIO.name(), s.getStorage()) || s.isHasFile()).collect(Collectors.toList());
                         if (CollectionUtils.isNotEmpty(otherRepositoryList)) {
