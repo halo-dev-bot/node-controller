@@ -1,6 +1,5 @@
 package io.metersphere.api.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.metersphere.api.jmeter.JMeterService;
 import io.metersphere.api.jmeter.MsDriverManager;
 import io.metersphere.api.jmeter.queue.BlockingQueueUtil;
@@ -12,15 +11,10 @@ import io.metersphere.api.service.utils.JmxAttachmentFileUtil;
 import io.metersphere.api.service.utils.ZipSpider;
 import io.metersphere.api.vo.ScriptData;
 import io.metersphere.dto.JmeterRunRequestDTO;
-import io.metersphere.dto.ProjectJarConfig;
-import io.metersphere.enums.JmxFileMetadataColumns;
-import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.save.SaveService;
-import org.apache.jmeter.testelement.TestPlan;
-import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jorphan.collections.HashTree;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -30,7 +24,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -71,16 +64,7 @@ public class JMeterExecuteService {
                 LoggerUtil.info("下载执行脚本完成：" + jmxFile.getName(), runRequest.getReportId());
                 // 生成执行脚本
                 HashTree testPlan = SaveService.loadTree(jmxFile);
-                // 批量执行时，loadjar在这里加载
-                TestPlan testPlanElement = (TestPlan) testPlan.getArray()[0];
-                JMeterProperty property = testPlanElement.getProperty(JmxFileMetadataColumns.JAR_PATH_CONFIG.name());
-                if (StringUtils.isNotBlank(property.getStringValue())) {
-                    Map<String, List<ProjectJarConfig>> jarsMap = JsonUtils.parseObject(property.getStringValue(), new TypeReference<Map<String, List<ProjectJarConfig>>>() {
-                    });
-                    runRequest.setCustomJarInfo(jarsMap);
-                    MsDriverManager.downloadProjectJar(runRequest);
-                    testPlanElement.removeProperty(JmxFileMetadataColumns.JAR_PATH_CONFIG.name());
-                }
+                MsDriverManager.batchLoadJar(runRequest, testPlan);
                 //检查是否需要附件进行下载，并替换JMX里的文件路径
                 jmxAttachmentFileUtil.parseJmxAttachmentFile(testPlan, runRequest.getReportId(), runRequest.getPlatformUrl());
 
