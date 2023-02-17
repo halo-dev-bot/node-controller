@@ -70,6 +70,7 @@ public class MinIORepositoryImpl implements FileRepository {
         try {
             Object serverUrl = minioConfig.get(MinIOConfigEnum.ENDPOINT).toString();
             if (minioClient == null && serverUrl != null) {
+                LoggerUtil.info("开始初始化Minio插件。配置：", minioConfig);
                 // 创建 MinioClient 客户端
                 minioClient = MinioClient.builder()
                         .endpoint(minioConfig.get(MinIOConfigEnum.ENDPOINT).toString())
@@ -79,8 +80,11 @@ public class MinIORepositoryImpl implements FileRepository {
                 if (!exist) {
                     minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
                 }
+            } else {
+                LoggerUtil.info("MinioClient已初始化，无需再配置。");
             }
         } catch (Exception e) {
+            LoggerUtil.info("MinioClient已初始化失败！", e);
             LoggerUtil.error(e);
         }
     }
