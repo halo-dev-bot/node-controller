@@ -60,7 +60,6 @@ public class JmxAttachmentFileUtil {
     private void getAttachmentFile(List<AttachmentBodyFile> bodyFileList, String reportId, String platformUrl) {
         List<AttachmentBodyFile> downloadFromApiServer = new ArrayList<>();
         List<AttachmentBodyFile> downloadFromRepository = new ArrayList<>();
-
         //检查Local类型的文件在本地是否存在
         if (CollectionUtils.isNotEmpty(bodyFileList)) {
             bodyFileList.forEach(bodyFile -> {
@@ -133,9 +132,9 @@ public class JmxAttachmentFileUtil {
                     ZipSpider.unzip(bodyFile.getPath(), downloadPath);
                     FileUtils.deleteFile(bodyFile.getPath());
                 }
-                LoggerUtil.info("本次执行[" + reportId + "]连接主工程Metersphere需要下载[" + downloadFromApiServer.size() + "]个文件，已下载完毕。");
+                LoggerUtil.info("本次执行[" + reportId + "]连接主工程Metersphere需要下载[" + downloadFromApiServer.size() + "]个文件，下载完毕。");
             } catch (Exception e) {
-                LoggerUtil.error("连接API-TEST下载附件失败!");
+                LoggerUtil.error("连接[API-TEST]下载附件失败!", e);
             }
         }
     }

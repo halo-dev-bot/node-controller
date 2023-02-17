@@ -12,6 +12,7 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -68,10 +69,14 @@ public class MinIORepositoryImpl implements FileRepository {
     }
 
     public void initMinioClient(Map<String, Object> minioConfig) {
+        if (MapUtils.isEmpty(minioConfig)) {
+            LoggerUtil.info("初始化MinIO插件停止：参数[minioConfig]为空。");
+            return;
+        }
         try {
             Object serverUrl = minioConfig.get(MinIOConfigEnum.ENDPOINT).toString();
             if (minioClient == null && serverUrl != null) {
-                LoggerUtil.info("开始初始化Minio插件。配置：", JsonUtils.toJSONString(minioConfig));
+                LoggerUtil.info("开始初始化MinIO插件。配置：", JsonUtils.toJSONString(minioConfig));
                 // 创建 MinioClient 客户端
                 minioClient = MinioClient.builder()
                         .endpoint(minioConfig.get(MinIOConfigEnum.ENDPOINT).toString())
@@ -81,12 +86,12 @@ public class MinIORepositoryImpl implements FileRepository {
                 if (!exist) {
                     minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
                 }
+                LoggerUtil.info("初始化MinIO插件结束。");
             } else {
-                LoggerUtil.info("MinioClient已初始化，无需再配置。");
+                LoggerUtil.info("MinIOClient已初始化，无需再配置。");
             }
         } catch (Exception e) {
-            LoggerUtil.info("MinioClient已初始化失败！", e);
-            LoggerUtil.error(e);
+            LoggerUtil.error("MinIOClient已初始化失败！", e);
         }
     }
 
