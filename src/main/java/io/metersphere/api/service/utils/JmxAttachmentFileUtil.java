@@ -99,6 +99,15 @@ public class JmxAttachmentFileUtil {
         if (CollectionUtils.isNotEmpty(downloadErrorList)) {
             downloadFromApiServer.addAll(downloadErrorList);
         }
+        //Minio没下载到的文件连接主工程下载
+        for (AttachmentBodyFile minIOFile : downloadFromRepository) {
+            File executeFile = temporaryFileUtil.getFile(minIOFile.getProjectId(), minIOFile.getFileMetadataId(), minIOFile.getFileUpdateTime(), minIOFile.getName());
+            if (executeFile == null) {
+                LoggerUtil.info("本次执行[" + reportId + "]需要下载的MinIO文件【" + minIOFile.getFileUpdateTime() + "_" + minIOFile.getName() + "】下载失败！需要连接主工程下载！");
+                downloadFromApiServer.add(minIOFile);
+            }
+        }
+
         //  API-TEST下载
         if (CollectionUtils.isNotEmpty(downloadFromApiServer)) {
             try {
