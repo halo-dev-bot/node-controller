@@ -37,7 +37,7 @@ public class DownloadPluginJarService {
         if (temporaryFileUtil == null) {
             temporaryFileUtil = CommonBeanFactory.getBean(TemporaryFileUtil.class);
         }
-
+        LoggerUtil.info("开始检查Minio配置：", runRequest.getReportId());
         //Minio 初始化
         minIOConfigService.initMinioClient(runRequest.getPluginConfigDTO().getConfig());
         LoggerUtil.info("开始同步插件JAR：", runRequest.getReportId());

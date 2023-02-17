@@ -3,6 +3,7 @@ package io.metersphere.api.repository;
 import io.metersphere.api.jmeter.utils.CommonBeanFactory;
 import io.metersphere.dto.AttachmentBodyFile;
 import io.metersphere.enums.MinIOConfigEnum;
+import io.metersphere.utils.JsonUtils;
 import io.metersphere.utils.LoggerUtil;
 import io.metersphere.utils.TemporaryFileUtil;
 import io.minio.BucketExistsArgs;
@@ -70,7 +71,7 @@ public class MinIORepositoryImpl implements FileRepository {
         try {
             Object serverUrl = minioConfig.get(MinIOConfigEnum.ENDPOINT).toString();
             if (minioClient == null && serverUrl != null) {
-                LoggerUtil.info("开始初始化Minio插件。配置：", minioConfig);
+                LoggerUtil.info("开始初始化Minio插件。配置：", JsonUtils.toJSONString(minioConfig));
                 // 创建 MinioClient 客户端
                 minioClient = MinioClient.builder()
                         .endpoint(minioConfig.get(MinIOConfigEnum.ENDPOINT).toString())
