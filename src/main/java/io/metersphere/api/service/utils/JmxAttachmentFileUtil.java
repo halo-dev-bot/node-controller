@@ -65,7 +65,7 @@ public class JmxAttachmentFileUtil {
             bodyFileList.forEach(bodyFile -> {
                 File executeFile;
                 if (StringUtils.isNotEmpty(bodyFile.getFileStorage()) && !StringUtils.equals(bodyFile.getFileStorage(), StorageConstants.LOCAL.name())) {
-                    executeFile = temporaryFileUtil.getFile(bodyFile.getProjectId(), bodyFile.getFileMetadataId(), bodyFile.getFileUpdateTime(), bodyFile.getName());
+                    executeFile = temporaryFileUtil.getFile(bodyFile.getProjectId(), bodyFile.getFileMetadataId(), bodyFile.getFileUpdateTime(), bodyFile.getName(), bodyFile.getFileType());
                     if (executeFile == null) {
                         LoggerUtil.info("本次执行[" + reportId + "]需要下载的[" + bodyFile.getFileStorage() + "]文件【" + bodyFile.getFileUpdateTime() + "_" + bodyFile.getName() + "】在当前机器节点未找到！");
                         //区分MinIO下载还是api-server下载
@@ -100,7 +100,7 @@ public class JmxAttachmentFileUtil {
         }
         //Minio没下载到的文件连接主工程下载
         for (AttachmentBodyFile minIOFile : downloadFromRepository) {
-            File executeFile = temporaryFileUtil.getFile(minIOFile.getProjectId(), minIOFile.getFileMetadataId(), minIOFile.getFileUpdateTime(), minIOFile.getName());
+            File executeFile = temporaryFileUtil.getFile(minIOFile.getProjectId(), minIOFile.getFileMetadataId(), minIOFile.getFileUpdateTime(), minIOFile.getName(), minIOFile.getFileType());
             if (executeFile == null) {
                 LoggerUtil.info("本次执行[" + reportId + "]需要下载的MinIO文件【" + minIOFile.getFileUpdateTime() + "_" + minIOFile.getName() + "】下载失败！需要连接主工程下载！");
                 downloadFromApiServer.add(minIOFile);
@@ -183,7 +183,7 @@ public class JmxAttachmentFileUtil {
                 file.setFilePath(filePath);
             }
 
-            String localPath = temporaryFileUtil.generateFilePath(null, null, 0, this.substringBodyPath(file.getFilePath()));
+            String localPath = temporaryFileUtil.generateLocalFilePath(this.substringBodyPath(file.getFilePath()));
             //判断文本地件是否存在。如果存在则返回null。 文件库文件的本地校验在下载之前判断
             if (this.isFileExists(null, null, 0, this.substringBodyPath(file.getFilePath()))) {
                 file = null;
@@ -249,17 +249,22 @@ public class JmxAttachmentFileUtil {
                 file.setProjectId(testElement.getPropertyAsString(JmxFileMetadataColumns.REF_FILE_PROJECT_ID.name()));
             }
 
+            if (StringUtils.isNotBlank(testElement.getPropertyAsString(JmxFileMetadataColumns.REF_FILE_TYPE.name()))) {
+                file.setFileType(testElement.getPropertyAsString(JmxFileMetadataColumns.REF_FILE_TYPE.name()));
+            }
+
             String localPath;
             if (StringUtils.isNotEmpty(file.getFileStorage()) && !StringUtils.equals(file.getFileStorage(), StorageConstants.LOCAL.name())) {
                 localPath = temporaryFileUtil.generateFilePath(
                         file.getProjectId(),
                         file.getFileMetadataId(),
                         file.getFileUpdateTime(),
-                        file.getName()
+                        file.getName(),
+                        file.getFileType()
                 );
             } else {
                 String filePath = StringUtils.isBlank(file.getFilePath()) ? file.getName() : file.getFilePath();
-                localPath = temporaryFileUtil.generateFilePath(null, null, 0, this.substringBodyPath(filePath));
+                localPath = temporaryFileUtil.generateLocalFilePath(this.substringBodyPath(filePath));
                 //判断文本地件是否存在。如果存在则返回null。 文件库文件的本地校验在下载之前判断
                 if (this.isFileExists(null, null, 0, this.substringBodyPath(file.getFilePath()))) {
                     file = null;
@@ -280,7 +285,7 @@ public class JmxAttachmentFileUtil {
     }
 
     private boolean isFileExists(String folder, String fileMetadataId, long updateTime, String fileName) {
-        File localFile = temporaryFileUtil.getFile(folder, fileMetadataId, updateTime, fileName);
+        File localFile = temporaryFileUtil.getFile(folder, fileMetadataId, updateTime, fileName, null);
         return localFile != null;
     }
 

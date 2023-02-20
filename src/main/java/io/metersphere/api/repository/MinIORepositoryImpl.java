@@ -35,12 +35,12 @@ public class MinIORepositoryImpl implements FileRepository {
             temporaryFileUtil = CommonBeanFactory.getBean(TemporaryFileUtil.class);
         }
         assert temporaryFileUtil != null;
-        File file = temporaryFileUtil.getFile(request.getProjectId(), request.getFileMetadataId(), request.getFileUpdateTime(), request.getName());
+        File file = temporaryFileUtil.getFile(request.getProjectId(), request.getFileMetadataId(), request.getFileUpdateTime(), request.getName(), request.getFileType());
         if (file == null) {
             byte[] fileBytes = getFileAsStream(request.getRemotePath()).readAllBytes();
             //附件存储到缓存目录中
-            temporaryFileUtil.saveFile(request.getProjectId(), request.getFileMetadataId(), request.getFileUpdateTime(), request.getName(), fileBytes);
-            return temporaryFileUtil.getFile(request.getProjectId(), request.getFileMetadataId(), request.getFileUpdateTime(), request.getName());
+            temporaryFileUtil.saveFile(request.getProjectId(), request.getFileMetadataId(), request.getFileUpdateTime(), request.getName(), request.getFileType(), fileBytes);
+            return temporaryFileUtil.getFile(request.getProjectId(), request.getFileMetadataId(), request.getFileUpdateTime(), request.getName(), request.getFileType());
         } else {
             return file;
         }
