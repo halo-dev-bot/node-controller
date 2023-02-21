@@ -266,7 +266,7 @@ public class JmxAttachmentFileUtil {
                 String filePath = StringUtils.isBlank(file.getFilePath()) ? file.getName() : file.getFilePath();
                 localPath = temporaryFileUtil.generateLocalFilePath(this.substringBodyPath(filePath));
                 //判断文本地件是否存在。如果存在则返回null。 文件库文件的本地校验在下载之前判断
-                if (this.isFileExists(null, null, 0, this.substringBodyPath(file.getFilePath()))) {
+                if (this.isFileExists(null, null, 0, this.substringBodyPath(filePath))) {
                     file = null;
                 }
             }
