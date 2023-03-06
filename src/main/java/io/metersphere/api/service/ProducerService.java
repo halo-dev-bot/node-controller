@@ -2,7 +2,6 @@ package io.metersphere.api.service;
 
 import io.metersphere.api.jmeter.ExtendedParameter;
 import io.metersphere.api.jmeter.dto.MsgDTO;
-import io.metersphere.api.service.utils.ResultConversionUtil;
 import io.metersphere.config.KafkaConfig;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.JmeterRunRequestDTO;
@@ -88,7 +87,7 @@ public class ProducerService {
             LoggerUtil.error("KAFKA 推送结果异常", dto.getReportId(), ex);
             // 尝试逐条发送
             if (dto != null && CollectionUtils.isNotEmpty(dto.getRequestResults())) {
-                dto.getArbitraryData().put(ExtendedParameter.REPORT_STATUS, ResultConversionUtil.getStatus(dto));
+                dto.getArbitraryData().put(ExtendedParameter.REPORT_STATUS, dto);
                 StringBuffer logMsg = new StringBuffer(dto.getConsole())
                         .append("\n")
                         .append("KAFKA推送结果异常：[" + dto.getReportId() + "]")

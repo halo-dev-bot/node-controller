@@ -18,11 +18,9 @@
 package io.metersphere.api.jmeter;
 
 import io.metersphere.api.jmeter.dto.MsgDTO;
-import io.metersphere.api.jmeter.dto.RequestResultExpandDTO;
 import io.metersphere.api.jmeter.queue.PoolExecBlockingQueueUtil;
 import io.metersphere.api.jmeter.utils.CommonBeanFactory;
 import io.metersphere.api.jmeter.utils.FixedCapacityUtil;
-import io.metersphere.api.jmeter.utils.ResponseUtil;
 import io.metersphere.api.jmeter.utils.ResultParseUtil;
 import io.metersphere.api.service.ProducerService;
 import io.metersphere.api.service.utils.JmxAttachmentFileUtil;
@@ -189,16 +187,12 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
                 if (StringUtils.isNotEmpty(requestResult.getName()) && requestResult.getName().startsWith("Transaction=")) {
                     requestResult.getSubRequestResults().forEach(transactionResult -> {
                         transactionResult.getResponseResult().setConsole(console);
-                        //解析误报内容
-                        RequestResultExpandDTO expandDTO = ResponseUtil.parseByRequestResult(transactionResult);
-                        dto.setContent("result_" + JsonUtils.toJSONString(expandDTO));
+                        dto.setContent("result_" + JsonUtils.toJSONString(transactionResult));
                         producerService.sendDebug(this.reportId, dto, kafkaConfig);
                     });
                 } else {
                     requestResult.getResponseResult().setConsole(console);
-                    //解析误报内容
-                    RequestResultExpandDTO expandDTO = ResponseUtil.parseByRequestResult(requestResult);
-                    dto.setContent("result_" + JsonUtils.toJSONString(expandDTO));
+                    dto.setContent("result_" + JsonUtils.toJSONString(requestResult));
                     producerService.sendDebug(this.reportId, dto, kafkaConfig);
                 }
                 LoggerUtil.debug("send. " + this.getName());
