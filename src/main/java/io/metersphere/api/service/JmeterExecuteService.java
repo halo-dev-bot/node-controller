@@ -181,6 +181,17 @@ public class JmeterExecuteService {
                 runRequest.getExtendedParameters().put(LoggerUtil.DEBUG, true);
             }
             Map<String, String> params = new HashMap<>();
+            // 生成附件/JAR文件
+            String plugJarUrl = URLParserUtil.getPluginURL(runRequest.getPlatformUrl());
+            if (StringUtils.isEmpty(plugUrl)) {
+                LoggerUtil.info("开始同步插件JAR：" + plugJarUrl, runRequest.getReportId());
+                File plugFile = ZipSpider.downloadFile(plugJarUrl, FileUtils.JAR_PLUG_FILE_DIR);
+                if (plugFile != null) {
+                    ZipSpider.unzip(plugFile.getPath(), FileUtils.JAR_PLUG_FILE_DIR);
+                    this.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
+                }
+            }
+            plugUrl = plugJarUrl;
             params.put("reportId", runRequest.getReportId());
             params.put("testId", runRequest.getTestId());
             String script = this.getForObject(URLParserUtil.getScriptURL(runRequest.getPlatformUrl()), params);
