@@ -94,6 +94,8 @@ public class JMeterExecuteService {
             Map<String, String> params = new HashMap<>();
             params.put("reportId", runRequest.getReportId());
             params.put("testId", runRequest.getTestId());
+            // 下载系统插件
+            downloadPluginJarService.downloadPlugin(runRequest);
             String script = this.getForObject(URLParserUtil.getScriptURL(runRequest.getPlatformUrl()), params);
             InputStream inputSource = getStrToStream(script);
             runRequest.setHashTree(JMeterService.getHashTree(SaveService.loadElement(inputSource)));
