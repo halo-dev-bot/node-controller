@@ -24,6 +24,7 @@ import io.metersphere.api.jmeter.utils.FixedCapacityUtil;
 import io.metersphere.api.jmeter.utils.ResultParseUtil;
 import io.metersphere.api.service.ProducerService;
 import io.metersphere.api.service.utils.JmxAttachmentFileUtil;
+import io.metersphere.dto.MsRegexDTO;
 import io.metersphere.dto.RequestResult;
 import io.metersphere.jmeter.JMeterBase;
 import io.metersphere.utils.JMeterVars;
@@ -38,6 +39,7 @@ import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.threads.JMeterVariables;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -57,6 +59,11 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
     private Map<String, Object> kafkaConfig;
     private boolean clearLog;
     private String runMode;
+    private Map<String, List<MsRegexDTO>> fakeErrorMap;
+
+    public void setFakeErrorMap(Map<String, List<MsRegexDTO>> fakeErrorMap) {
+        this.fakeErrorMap = fakeErrorMap;
+    }
 
     public String getTestId() {
         return testId;
@@ -176,7 +183,7 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
         SampleResult result = event.getResult();
         this.setVars(result);
         if (isSampleWanted(result.isSuccessful(), result) && !StringUtils.equals(result.getSampleLabel(), RUNNING_DEBUG_SAMPLER_NAME)) {
-            RequestResult requestResult = JMeterBase.getRequestResult(result);
+            RequestResult requestResult = JMeterBase.getRequestResult(result, fakeErrorMap);
             if (requestResult != null && ResultParseUtil.isNotAutoGenerateSampler(requestResult)) {
                 MsgDTO dto = new MsgDTO();
                 dto.setExecEnd(false);

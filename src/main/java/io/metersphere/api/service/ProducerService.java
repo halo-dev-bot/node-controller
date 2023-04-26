@@ -17,7 +17,6 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,13 +53,7 @@ public class ProducerService {
         BeanUtils.copyProperties(runRequest, dto);
         dto.setConsole(logMessage);
         dto.setRequestResults(new LinkedList<>());
-        if (dto.getArbitraryData() == null || dto.getArbitraryData().isEmpty()) {
-            dto.setArbitraryData(new HashMap<String, Object>() {{
-                this.put(ExtendedParameter.TEST_END, true);
-            }});
-        } else {
-            dto.getArbitraryData().put(ExtendedParameter.TEST_END, true);
-        }
+        dto.setHasEnded(true);
         this.send(dto, runRequest.getKafkaConfig());
     }
 

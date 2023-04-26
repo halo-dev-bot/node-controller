@@ -1,6 +1,5 @@
 package io.metersphere.api.jmeter.queue;
 
-import io.metersphere.api.jmeter.ExtendedParameter;
 import io.metersphere.api.jmeter.JMeterService;
 import io.metersphere.api.jmeter.utils.CommonBeanFactory;
 import io.metersphere.api.jmeter.utils.JMeterThreadUtil;
@@ -34,13 +33,12 @@ public class SystemExecTask implements Runnable {
                 LoggerUtil.info("任务执行超时", request.getReportId());
                 ResultDTO dto = new ResultDTO();
                 BeanUtils.copyProperties(dto, request);
+                dto.setHasEnded(true);
                 if (dto.getArbitraryData() == null || dto.getArbitraryData().isEmpty()) {
                     dto.setArbitraryData(new HashMap<String, Object>() {{
-                        this.put(ExtendedParameter.TEST_END, true);
                         this.put("TIMEOUT", true);
                     }});
                 } else {
-                    dto.getArbitraryData().put(ExtendedParameter.TEST_END, true);
                     dto.getArbitraryData().put("TIMEOUT", true);
                 }
                 CommonBeanFactory.getBean(ProducerService.class).send(dto, request.getKafkaConfig());

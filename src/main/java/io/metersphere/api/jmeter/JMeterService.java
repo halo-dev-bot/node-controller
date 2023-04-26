@@ -21,6 +21,9 @@ import org.apache.jorphan.collections.HashTree;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
+
 import java.io.File;
 import java.lang.reflect.Field;
 
@@ -110,6 +113,7 @@ public class JMeterService {
         resultCollector.setKafkaConfig(request.getKafkaConfig());
         resultCollector.setProperty(TestElement.TEST_CLASS, MsDebugListener.class.getName());
         resultCollector.setProperty(TestElement.GUI_CLASS, SaveService.aliasToClass("ViewResultsFullVisualizer"));
+        resultCollector.setFakeErrorMap(request.getFakeErrorMap());
         resultCollector.setEnabled(true);
         resultCollector.setClearLog(true);
         resultCollector.setRunMode(request.getRunMode());
