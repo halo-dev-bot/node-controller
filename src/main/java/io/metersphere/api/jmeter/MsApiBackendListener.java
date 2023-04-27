@@ -100,6 +100,7 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
             }
             PoolExecBlockingQueueUtil.offer(dto.getReportId());
             queues.clear();
+            ApiLocalRunner.clearCache(dto.getReportId());
         }
     }
 

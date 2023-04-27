@@ -1,5 +1,6 @@
 package io.metersphere.api.jmeter.utils;
 
+import io.metersphere.api.jmeter.ApiLocalRunner;
 import io.metersphere.api.jmeter.queue.ExecThreadPoolExecutor;
 import io.metersphere.api.jmeter.queue.PoolExecBlockingQueueUtil;
 import io.metersphere.utils.LoggerUtil;
@@ -16,6 +17,7 @@ public class JMeterThreadUtil {
         StringBuilder threadNames = new StringBuilder();
         for (String name : names) {
             for (int i = 0; i < noThreads; i++) {
+                ApiLocalRunner.stop(name);
                 if (lstThreads[i] != null && StringUtils.isNotEmpty(lstThreads[i].getName()) && lstThreads[i].getName().startsWith(name)) {
                     LoggerUtil.error("异常强制处理线程编号：" + i + " = " + lstThreads[i].getName());
                     threadNames.append(lstThreads[i].getName()).append("；");

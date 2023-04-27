@@ -8,8 +8,9 @@ import io.metersphere.constants.BackendListenerConstants;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.jmeter.JMeterBase;
-import io.metersphere.jmeter.LocalRunner;
 import io.metersphere.utils.LoggerUtil;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.save.SaveService;
@@ -20,8 +21,6 @@ import org.apache.jorphan.collections.HashTree;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
 import java.io.File;
 import java.lang.reflect.Field;
 
@@ -92,8 +91,8 @@ public class JMeterService {
                 JMeterBase.addBackendListener(runRequest, runRequest.getHashTree(),
                         MsApiBackendListener.class.getCanonicalName());
             }
-            LocalRunner runner = new LocalRunner(testPlan);
-            runner.run(runRequest.getReportId());
+            ApiLocalRunner runner = new ApiLocalRunner(testPlan);
+            runner.run(runRequest.getReportId(), runRequest.getRunMode(), runRequest.getTriggerMode());
         } catch (Exception e) {
             LoggerUtil.error("Local执行异常", runRequest.getReportId(), e);
             MSException.throwException("读取脚本失败");

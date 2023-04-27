@@ -9,10 +9,10 @@ import io.metersphere.api.vo.JvmInfo;
 import io.metersphere.constants.RunModeConstants;
 import io.metersphere.dto.JmeterRunRequestDTO;
 import io.metersphere.utils.LoggerUtil;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 
 @RestController
@@ -24,8 +24,8 @@ public class JmeterExecuteController {
 
     @PostMapping(value = "/api/start")
     public String apiStartRun(@RequestBody JmeterRunRequestDTO runRequest) {
-         if ((StringUtils.equals(runRequest.getReportType(), RunModeConstants.SET_REPORT.toString()))
-         || (BlockingQueueUtil.add(runRequest.getReportId()))) {
+        if ((StringUtils.equals(runRequest.getReportType(), RunModeConstants.SET_REPORT.toString()))
+                || (BlockingQueueUtil.add(runRequest.getReportId()))) {
             return jmeterExecuteService.runStart(runRequest);
         }
         return "当前报告 " + runRequest.getReportId() + " 正在执行中";
@@ -53,7 +53,7 @@ public class JmeterExecuteController {
         return JvmService.jvmInfo();
     }
 
-    @GetMapping("/stop")
+    @PostMapping("/stop")
     public void stop(@RequestBody List<String> keys) {
         JMeterThreadUtil.stop(keys);
     }

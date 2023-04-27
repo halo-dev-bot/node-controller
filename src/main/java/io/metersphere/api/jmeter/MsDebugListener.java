@@ -143,6 +143,7 @@ public class MsDebugListener extends AbstractListenerElement implements SampleLi
     @Override
     public void testEnded() {
         testEnded(TEST_IS_LOCAL);
+        ApiLocalRunner.clearCache(this.reportId);
     }
 
     @Override
