@@ -2,6 +2,8 @@ FROM registry.cn-qingdao.aliyuncs.com/metersphere/alpine-openjdk17-jre
 
 LABEL maintainer="FIT2CLOUD <support@fit2cloud.com>"
 
+RUN apk del curl && rm -f `which wget` `which apk`
+
 ARG MS_VERSION=dev
 ARG DEPENDENCY=target/dependency
 
