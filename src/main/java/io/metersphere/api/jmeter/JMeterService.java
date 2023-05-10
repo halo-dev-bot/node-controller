@@ -21,9 +21,6 @@ import org.apache.jorphan.collections.HashTree;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
-
 import java.io.File;
 import java.lang.reflect.Field;
 
@@ -95,7 +92,7 @@ public class JMeterService {
                         MsApiBackendListener.class.getCanonicalName());
             }
             ApiLocalRunner runner = new ApiLocalRunner(testPlan);
-            runner.run(runRequest.getReportId(), runRequest.getRunMode(), runRequest.getTriggerMode());
+            runner.run(runRequest.getReportId());
         } catch (Exception e) {
             LoggerUtil.error("Local执行异常", runRequest.getReportId(), e);
             MSException.throwException("读取脚本失败");

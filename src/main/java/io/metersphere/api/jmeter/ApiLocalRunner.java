@@ -12,7 +12,6 @@ import org.apache.jmeter.engine.StandardJMeterEngine;
 import org.apache.jorphan.collections.HashTree;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,20 +27,10 @@ public class ApiLocalRunner extends LocalRunner {
     }
 
 
-    public void run(String report, String runMode, String triggerMode) {
+    public void run(String report) {
         StandardJMeterEngine engine = new StandardJMeterEngine();
         engine.configure(this.jmxTree);
-        List<String> runModeList = List.of("SCENARIO_PLAN",
-                "SCHEDULE_SCENARIO_PLAN",
-                "SCHEDULE_SCENARIO",
-                "JENKINS_SCENARIO_PLAN",
-                "API_PLAN", "SCHEDULE_API_PLAN",
-                "JENKINS_API_PLAN");
-        List<String> triggerModeList = List.of("BATCH", "MANUAL");
-        if (triggerModeList.contains(triggerMode) &&
-                !runModeList.contains(runMode)) {
-            runningTasks.put(report, engine);
-        }
+        runningTasks.put(report, engine);
         try {
             LoggerUtil.info("LocalRunner 开始执行报告", report);
             engine.runTest();
