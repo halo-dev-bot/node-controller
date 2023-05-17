@@ -12,7 +12,7 @@ COPY ${DEPENDENCY}/BOOT-INF/classes /app
 
 RUN mv /app/lib/ms-jmeter-core-*.jar /app/lib/ms-jmeter-core.jar
 RUN mv /app/jmeter /opt/
-RUN addgroup -S docker && addgroup appuser docker
+RUN addgroup -g 101 -S docker && addgroup appuser docker
 
 ENV JAVA_CLASSPATH=/app:/app/lib/ms-jmeter-core.jar:/opt/jmeter/lib/ext/*:/app/lib/*
 ENV JAVA_MAIN_CLASS=io.metersphere.Application
