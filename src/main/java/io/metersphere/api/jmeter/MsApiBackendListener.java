@@ -67,7 +67,6 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
         if (dto.isRetryEnable()) {
             queues.addAll(sampleResults);
         } else {
-            LoggerUtil.info("开始处理结果数据：" + dto.getRequestResults().size(), dto.getReportId());
             JMeterBase.resultFormatting(sampleResults, dto);
             LoggerUtil.info("结果数据处理完成：" + dto.getRequestResults().size(), dto.getReportId());
             if (apiRunModes.contains(dto.getRunMode())) {
