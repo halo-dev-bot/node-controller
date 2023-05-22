@@ -65,11 +65,11 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
             RetryResultUtil.clearLoops(sampleResults);
         }
         if (dto.isRetryEnable()) {
-            RetryResultUtil.clearLoops(sampleResults);
             queues.addAll(sampleResults);
         } else {
-            LoggerUtil.info("开始处理数据：" + queues.size(), dto.getReportId());
+            LoggerUtil.info("开始处理结果数据：" + dto.getRequestResults().size(), dto.getReportId());
             JMeterBase.resultFormatting(sampleResults, dto);
+            LoggerUtil.info("结果数据处理完成：" + dto.getRequestResults().size(), dto.getReportId());
             if (apiRunModes.contains(dto.getRunMode())) {
                 String reportId = dto.getReportId();
                 if (StringUtils.equals(dto.getReportType(), RunModeConstants.SET_REPORT.toString())) {
@@ -79,6 +79,7 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
             }
             resultVO = ReportStatusUtil.getStatus(dto, resultVO);
             dto.getArbitraryData().put(ReportStatusUtil.LOCAL_STATUS_KEY, resultVO);
+            LoggerUtil.info("开始发送单条请求：" + dto.getRequestResults().size(), dto.getReportId());
             producerService.send(dto, producerProps);
             sampleResults.clear();
         }
@@ -154,7 +155,8 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
         if (StringUtils.isNotBlank(context.getParameter(BackendListenerConstants.FAKE_ERROR.name()))) {
             Map<String, List<MsRegexDTO>> fakeErrorMap = JsonUtils.parseObject(
                     context.getParameter(BackendListenerConstants.FAKE_ERROR.name()),
-                    new TypeReference<Map<String, List<MsRegexDTO>>>() {});
+                    new TypeReference<Map<String, List<MsRegexDTO>>>() {
+                    });
             dto.setFakeErrorMap(fakeErrorMap);
         }
         String ept = context.getParameter(BackendListenerConstants.EPT.name());
