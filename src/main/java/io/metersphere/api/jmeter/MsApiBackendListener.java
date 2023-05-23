@@ -6,7 +6,6 @@ import io.metersphere.api.jmeter.queue.PoolExecBlockingQueueUtil;
 import io.metersphere.api.jmeter.utils.CommonBeanFactory;
 import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.jmeter.utils.FixedCapacityUtil;
-import io.metersphere.api.jmeter.utils.ResultParseUtil;
 import io.metersphere.api.service.JvmService;
 import io.metersphere.api.service.ProducerService;
 import io.metersphere.api.service.utils.JmxAttachmentFileUtil;
@@ -68,7 +67,7 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
         if (dto.isRetryEnable()) {
             queues.addAll(sampleResults);
         } else {
-            ResultParseUtil.resultFormatting(sampleResults, dto);
+            JMeterBase.resultFormatting(sampleResults, dto);
             LoggerUtil.info("结果数据处理完成：" + dto.getRequestResults().size(), dto.getReportId());
             if (apiRunModes.contains(dto.getRunMode())) {
                 String reportId = dto.getReportId();
@@ -81,6 +80,7 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
             dto.getArbitraryData().put(ReportStatusUtil.LOCAL_STATUS_KEY, resultVO);
             LoggerUtil.info("开始发送单条请求：" + dto.getRequestResults().size(), dto.getReportId());
             producerService.send(dto, producerProps);
+            sampleResults.clear();
         }
     }
 
