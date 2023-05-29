@@ -62,7 +62,7 @@ public class MsApiBackendListener extends AbstractBackendListenerClient implemen
     public void handleSampleResults(List<SampleResult> sampleResults, BackendListenerContext context) {
         LoggerUtil.info("接收到JMETER执行数据【" + sampleResults.size() + " 】", dto.getReportId());
         if (CollectionUtils.isNotEmpty(sampleResults)) {
-            RetryResultUtil.clearLoops(sampleResults);
+            sampleResults = RetryResultUtil.clearLoops(sampleResults);
         }
         if (dto.isRetryEnable()) {
             queues.addAll(sampleResults);
