@@ -63,7 +63,7 @@ public class JmxAttachmentFileUtil {
         //检查Local类型的文件在本地是否存在
         if (CollectionUtils.isNotEmpty(bodyFileList)) {
             bodyFileList.forEach(bodyFile -> {
-                File executeFile;
+                File executeFile = null;
                 if (StringUtils.isNotEmpty(bodyFile.getFileStorage()) && !StringUtils.equals(bodyFile.getFileStorage(), StorageConstants.LOCAL.name())) {
                     executeFile = temporaryFileUtil.getFile(bodyFile.getProjectId(), bodyFile.getFileMetadataId(), bodyFile.getFileUpdateTime(), bodyFile.getName(), bodyFile.getFileType());
                     if (executeFile == null) {
@@ -81,12 +81,9 @@ public class JmxAttachmentFileUtil {
                     }
                 } else {
                     String filePath = this.substringBodyPath(bodyFile.getFilePath());
-                    executeFile = temporaryFileUtil.getLocalFile(filePath);
                     if (executeFile == null) {
                         LoggerUtil.info("本次执行[" + reportId + "]需要下载的[Local]文件【" + filePath + "】在当前机器节点未找到！");
                         downloadFromApiServer.add(bodyFile);
-                    } else {
-                        LoggerUtil.info("本次执行[" + reportId + "]需要下载的[Local]文件【" + filePath + "】在当前机器节点已找到，无需下载。");
                     }
                 }
             });
@@ -265,10 +262,6 @@ public class JmxAttachmentFileUtil {
             } else {
                 String filePath = StringUtils.isBlank(file.getFilePath()) ? file.getName() : file.getFilePath();
                 localPath = temporaryFileUtil.generateLocalFilePath(this.substringBodyPath(filePath));
-                //判断文本地件是否存在。如果存在则返回null。 文件库文件的本地校验在下载之前判断
-                if (this.isFileExists(null, null, 0, this.substringBodyPath(filePath))) {
-                    file = null;
-                }
             }
 
             if (StringUtils.isNotBlank(testElement.getPropertyAsString(FileUtils.FILE_PATH))) {
