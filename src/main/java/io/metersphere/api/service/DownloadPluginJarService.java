@@ -74,7 +74,7 @@ public class DownloadPluginJarService {
             pluginList.forEach(plugin -> {
                 try {
                     AttachmentBodyFile fileRequest = new AttachmentBodyFile();
-                    fileRequest.setRemotePath(StringUtils.join(LocalPathUtil.PLUGIN_PATH, plugin.getPluginId(), File.separator, plugin.getPluginId()));
+                    fileRequest.setRemotePath(StringUtils.join("/opt/metersphere/data/body/plugin", plugin.getPluginId(), File.separator, plugin.getPluginId()));
                     File file = minIOConfigService.getFile(fileRequest);
                     if (file != null && file.exists()) {
                         FileUtils.createFile(StringUtils.join(LocalPathUtil.PLUGIN_PATH, File.separator, StringUtils.substringAfter(plugin.getSourcePath(), FileUtils.BODY_PLUGIN_FILE_DIR)), temporaryFileUtil.fileToByte(file));
