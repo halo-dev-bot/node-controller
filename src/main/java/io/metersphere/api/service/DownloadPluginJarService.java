@@ -86,12 +86,15 @@ public class DownloadPluginJarService {
             //兼容历史数据
             if (CollectionUtils.isNotEmpty(jarPluginIds)) {
                 String plugJarUrl = URLParserUtil.getPluginURL(runRequest.getPlatformUrl());
-                LoggerUtil.info("下载插件jar:", plugJarUrl);
-                File plugFile = ZipSpider.downloadJarHistory(plugJarUrl, jarPluginIds, LocalPathUtil.PLUGIN_PATH);
-                if (plugFile != null) {
-                    ZipSpider.unzip(plugFile.getPath(), LocalPathUtil.PLUGIN_PATH);
-                    FileUtils.deleteFile(plugFile.getPath());
-                }
+                jarPluginIds.forEach(pluginId -> {
+                    LoggerUtil.info("下载插件jar:", pluginId);
+                    File plugFile = ZipSpider.downloadJarHistory(plugJarUrl, pluginId, LocalPathUtil.PLUGIN_PATH);
+                    if (plugFile != null) {
+                        ZipSpider.unzip(plugFile.getPath(), LocalPathUtil.PLUGIN_PATH);
+                        FileUtils.deleteFile(plugFile.getPath());
+                    }
+                });
+
             }
             //load所有jar
             if (CollectionUtils.isNotEmpty(pluginList) || CollectionUtils.isNotEmpty(jarPluginIds)) {

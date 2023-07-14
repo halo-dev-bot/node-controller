@@ -12,6 +12,7 @@ import java.io.*;
 import java.net.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -161,8 +162,10 @@ public class ZipSpider {
         return null;
     }
 
-    public static File downloadJarHistory(String urlPath, List<String> request, String downloadDir) {
-        byte[] t = JsonUtils.toJSONString(request).getBytes(Consts.UTF_8);
+    public static File downloadJarHistory(String urlPath, String pluginId, String downloadDir) {
+        byte[] t = JsonUtils.toJSONString(new ArrayList<>() {{
+            this.add(pluginId);
+        }}).getBytes(Consts.UTF_8);
         File file = getFile(urlPath, downloadDir, t);
         if (file != null) return file;
         return null;
