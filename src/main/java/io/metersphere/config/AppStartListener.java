@@ -4,6 +4,7 @@ import io.metersphere.api.jmeter.JMeterService;
 import io.metersphere.api.jmeter.utils.FileUtils;
 import io.metersphere.api.service.DownloadPluginJarService;
 import io.metersphere.jmeter.ProjectClassLoader;
+import io.metersphere.utils.LocalPathUtil;
 import io.metersphere.utils.LoggerUtil;
 import jakarta.annotation.Resource;
 import org.python.core.Options;
@@ -34,6 +35,7 @@ public class AppStartListener implements ApplicationListener<ApplicationReadyEve
 
         LoggerUtil.info("init plugin", FileUtils.JAR_PLUG_FILE_DIR);
         downloadPluginJarService.loadPlugJar(FileUtils.JAR_PLUG_FILE_DIR);
+        downloadPluginJarService.loadPlugJar(LocalPathUtil.PLUGIN_PATH);
     }
 
     /**
