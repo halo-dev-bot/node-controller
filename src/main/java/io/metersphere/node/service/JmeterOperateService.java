@@ -68,14 +68,8 @@ public class JmeterOperateService {
         dockerClientService.startContainer(dockerClient, testContainerId);
         LoggerUtil.info("Container create started testContainerId: " + testContainerId);
 
-        String reportContainerId = dockerClientService.createReportContainers(dockerClient, testRequest, testId, containerImage).getId();
-        dockerClientService.startContainer(dockerClient, reportContainerId);
-        LoggerUtil.info("Container create started reportContainerId: " + reportContainerId);
-
-
         removeContainer(dockerClient, testContainerId);
 
-        removeContainer(dockerClient, reportContainerId);
 
         dockerClient.logContainerCmd(testContainerId)
                 .withFollowStream(true)
